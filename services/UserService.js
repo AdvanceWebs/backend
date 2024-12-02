@@ -25,10 +25,10 @@ const registerUser = async (user) => {
 
   if (existingUser) {
     if (existingUser.email === user.email) {
-      throw new Error("Email already exists");
+      throw new Error("Email already exists.",);
     }
     if (existingUser.username === user.username) {
-      throw new Error("Username already exists");
+      throw new Error("Username already exists.");
     }
   }
 
@@ -71,7 +71,7 @@ const getProfile = async (userEmail) => {
     attributes: ["id", "email"],
   });
   if (!user) {
-    throw new Error("User not found");
+    throw new Error("User not found.");
   }
 
   return {

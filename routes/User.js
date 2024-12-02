@@ -18,7 +18,13 @@ router.post("/register", validateUser, async (req, res) => {
     res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
     console.error(error.message);
-    if (error.message === "Email already exists") {
+    if (error.message === "Email already exists.") {
+      return res.status(400).json({ message: error.message });
+    }
+    if (error.message === "Username already exists.") {
+      return res.status(400).json({ message: error.message });
+    }
+    if (error.message === "Missing required user information.") {
       return res.status(400).json({ message: error.message });
     }
     res.status(500).json({ message: "Server error" });
@@ -41,6 +47,10 @@ router.post("/login", async (req, res) => {
     if (error.message === "Invalid username or password.") {
       return res.status(401).json({ message: error.message });
     }
+    if (error.message === "Username and password are required.") {
+      return res.status(400).json({ message: error.message });
+    }
+
     res.status(500).json({ message: "Server error" });
   }
 });
