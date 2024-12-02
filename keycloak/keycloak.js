@@ -1,9 +1,14 @@
 const KcAdminClient = require("keycloak-admin").default;
 const axios = require("axios");
+const https = require("https");
 
 require("dotenv").config(); // Đọc biến môi trường từ tệp .env
 
-// Hàm kết nối đến Keycloak
+// Tạo một https.Agent để bỏ qua chứng chỉ SSL tự ký
+const agent = new https.Agent({
+  rejectUnauthorized: false, // Bỏ qua lỗi chứng chỉ không hợp lệ
+});
+
 async function connectToKeycloak() {
   // Lấy thông tin từ biến môi trường
   const baseUrl = process.env.KEYCLOAK_BASE_URL;
@@ -27,7 +32,7 @@ async function connectToKeycloak() {
     );
   }
 
-  //In ra tất cả biến môi trường
+  // In ra tất cả biến môi trường
   console.log("Keycloak environment variables:", {
     baseUrl,
     realmName,
@@ -37,83 +42,123 @@ async function connectToKeycloak() {
     adminPassword,
   });
 
-  // Tạo Keycloak Admin Client
-  const kcAdminClient = new KcAdminClient();
-
   try {
-    // Cấu hình realm
-    kcAdminClient.setConfig({
-      baseUrl,
-      realmName: realmName,
-    });
-    // Xác thực với Keycloak
-    await kcAdminClient.auth({
-      username: adminUsername,
-      password: adminPassword,
-      grantType: "password",
-      clientId,
-      clientSecret,
-      baseUrl,
-    });
+    // Gửi yêu cầu xác thực với Keycloak để lấy token
+    const response = await axios.post(
+      `${baseUrl}/realms/${realmName}/protocol/openid-connect/token`,
+      new URLSearchParams({
+        grant_type: "password",
+        username: adminUsername,
+        password: adminPassword,
+        client_id: clientId,
+        client_secret: clientSecret,
+      }),
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        httpsAgent: agent, // Sử dụng agent đã cấu hình để bỏ qua SSL certificate
+      }
+    );
 
     console.log("Connected to Keycloak successfully.");
-    return kcAdminClient; // Trả về client đã được kết nối
+    return response.data; // Trả về dữ liệu token nhận được từ Keycloak
   } catch (err) {
     console.error("Failed to connect to Keycloak:", err);
     throw err;
   }
 }
 
-// Hàm thêm user, sử dụng client từ connectToKeycloak
+// Hàm thêm user vào Keycloak
 async function addUser(user) {
   if (!user || !user.username || !user.email || !user.password) {
     throw new Error("Missing required user information.");
   }
 
   try {
-    // Kết nối đến Keycloak
-    const kcAdminClient = await connectToKeycloak();
+    // Kết nối đến Keycloak để lấy token
+    const tokenData = await connectToKeycloak();
+    console.log("Token data:", tokenData);
+    // Lấy token từ phản hồi của Keycloak
+    const token = tokenData.access_token;
 
-    // Kiểm tra xem user đã tồn tại hay chưa (dựa trên username)
-    const existingUsers = await kcAdminClient.users.find({
-      username: user.username,
-    });
-
-    if (existingUsers.length > 0) {
-      throw new Error(`User with username "${user.username}" already exists.`);
-    }
-
-    // Kiểm tra xem email đã tồn tại hay chưa (dựa trên email)
-    const existingEmails = await kcAdminClient.users.find({
-      email: user.email,
-    });
-
-    if (existingEmails.length > 0) {
-      throw new Error(`User with email "${user.email}" already exists.`);
-    }
-
-    // Tạo user mới
-    const newUser = await kcAdminClient.users.create({
-      username: user.username,
-      email: user.email,
-      firstName: ".",
-      lastName: ".",
-      enabled: true,
-      emailVerified: true,
-      credentials: [
-        {
-          type: "password",
-          value: user.password,
-          temporary: false,
+    // Gửi yêu cầu thêm user mới vào Keycloak
+    const response = await axios.post(
+      `${process.env.KEYCLOAK_BASE_URL}/admin/realms/${process.env.KEYCLOAK_REALM}/users`,
+      {
+        username: user.email,
+        email: user.email,
+        firstName: ".",
+        lastName: ".",
+        enabled: true,
+        emailVerified: true,
+        credentials: [
+          {
+            type: "password",
+            value: user.password,
+            temporary: false,
+          },
+        ],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-      ],
-    });
+        httpsAgent: agent, // Sử dụng agent đã cấu hình
+      }
+    );
 
-    console.log("User created:", newUser);
-    return newUser; // Trả về user đã được tạo
+    if (response.status !== 201) {
+      throw new Error("Failed to create user.");
+    }
+
+    const foundedUser = await getUser(user.email);
+
+    console.log("User created:", foundedUser);
+    return foundedUser; // Trả về thông tin user đã được tạo
   } catch (err) {
     console.error("Error creating user:", err.message);
     throw err;
+  }
+}
+
+async function getUser(username) {
+  if (!username) {
+    throw new Error("Missing required username.");
+  }
+
+  try {
+    // Kết nối đến Keycloak để lấy token
+    const tokenData = await connectToKeycloak();
+    console.log("Token data:", tokenData);
+    const token = tokenData.access_token; // Lấy token từ phản hồi của Keycloak
+
+    // Gửi yêu cầu đến Keycloak để lấy thông tin người dùng dựa trên username
+    const response = await axios.get(
+      `${process.env.KEYCLOAK_BASE_URL}/admin/realms/${process.env.KEYCLOAK_REALM}/users`,
+      {
+        params: {
+          username: username, // Dùng query param để tìm người dùng theo username
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        httpsAgent: agent, // Sử dụng agent đã cấu hình nếu cần
+      }
+    );
+
+    if (response.data.length === 0) {
+      console.log("User not found");
+      return null; // Nếu không tìm thấy người dùng, trả về null
+    }
+
+    console.log("User found:", response.data[0]);
+    return response.data[0]; // Trả về thông tin người dùng đầu tiên tìm thấy
+  } catch (err) {
+    console.error("Error fetching user:", err.message);
+    throw err; // Ném lỗi nếu có lỗi xảy ra
   }
 }
 
@@ -137,7 +182,6 @@ async function loginUser(username, password) {
         grant_type: "password",
         username: username,
         password: password,
-
         client_id: clientId,
         client_secret: clientSecret,
       }),
@@ -145,6 +189,7 @@ async function loginUser(username, password) {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
+        httpsAgent: agent, // Sử dụng httpsAgent để bỏ qua SSL certificate
       }
     );
 
@@ -166,7 +211,6 @@ async function loginUser(username, password) {
     };
   }
 }
-
 // Export cả hai hàm để sử dụng ở nơi khác
 module.exports = {
   connectToKeycloak,

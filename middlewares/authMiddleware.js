@@ -1,5 +1,11 @@
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
+const https = require("https");
+
+// Tạo https agent nếu cần (ví dụ: bỏ qua SSL validation nếu bạn đang dùng chứng chỉ tự ký)
+const agent = new https.Agent({
+  rejectUnauthorized: false, // Nếu bạn cần bỏ qua SSL (tùy chọn)
+});
 
 const handleAccessToken = async (req, res, next) => {
   try {
@@ -55,9 +61,13 @@ const getKeycloakPublicKeyByKid = async (kid) => {
 
     // Gửi yêu cầu đến Keycloak endpoint để lấy danh sách các public key
     const response = await axios.get(
-      `${keycloakUrl}/realms/${realmName}/protocol/openid-connect/certs`
+      `${keycloakUrl}/realms/${realmName}/protocol/openid-connect/certs`,
+      {
+        httpsAgent: agent, // Thêm agent vào request
+      }
     );
 
+    console.log("Keycloak public keys:", response.data.keys);
     // Tìm khóa khớp với `kid`
     const key = response.data.keys.find((k) => k.kid === kid);
     if (!key) {
