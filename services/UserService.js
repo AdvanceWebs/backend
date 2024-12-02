@@ -1,28 +1,51 @@
 const User = require("../models/User");
 const { addUser, loginUser } = require("../keycloak/keycloak");
+const { Sequelize, Op } = require("sequelize");
 
 // Hàm xử lý đăng ký người dùng
-const registerUser = async (email, password) => {
+const registerUser = async (user) => {
   // Kiểm tra xem email đã tồn tại chưa
-  console.log("Email: ", email);
-  const existingUser = await User.findOne({ where: { email } });
+  console.log("Email: ", user.email);
+
+  if (
+    !user ||
+    !user.username ||
+    !user.email ||
+    !user.password ||
+    !user.firstName ||
+    !user.lastName
+  ) {
+    throw new Error("Missing required user information.");
+  }
+  const existingUser = await User.findOne({
+    where: {
+      [Sequelize.Op.or]: [{ email: user.email }, { username: user.username }],
+    },
+  });
+
   if (existingUser) {
-    throw new Error("Email already exists");
+    if (existingUser.email === user.email) {
+      throw new Error("Email already exists");
+    }
+    if (existingUser.username === user.username) {
+      throw new Error("Username already exists");
+    }
   }
 
   // Tạo người dùng trên Keycloak
   const keyCloakUser = {
-    username: email,
-    email,
-    firstName: "",
-    lastName: "",
-    password: password,
+    username: user.username,
+    email: user.email,
+    firstName: user.firstName || " ",
+    lastName: user.lastName || " ",
+    password: user.password,
   };
   const savedKeyCloakUser = await addUser(keyCloakUser);
 
   // Lưu thông tin người dùng vào database
   const entity = {
-    email,
+    username: savedKeyCloakUser.username,
+    email: user.email,
     keycloakUserId: savedKeyCloakUser.id,
   };
   const savedUser = await User.create(entity);

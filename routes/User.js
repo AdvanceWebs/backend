@@ -10,10 +10,10 @@ const router = express.Router();
 
 // POST /user/register
 router.post("/register", validateUser, async (req, res) => {
-  const { email, password } = req.body;
+  const user = req.body;
 
   try {
-    const savedUser = await registerUser(email, password);
+    const savedUser = await registerUser(user);
     console.log("User created:", savedUser);
     res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
@@ -27,9 +27,13 @@ router.post("/register", validateUser, async (req, res) => {
 
 // Login User
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, username } = req.body;
 
   try {
+    if (!email || !password) {
+      return res.status(400).json({ message: "Missing required information." });
+    }
+
     const token = await loginUserService(email, password);
     res.json({ data: token });
   } catch (error) {

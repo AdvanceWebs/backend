@@ -10,6 +10,11 @@ const User = sequelize.define("User", {
       isEmail: true,
     },
   },
+  username: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+  },
   keycloakUserId: {
     type: DataTypes.STRING,
     allowNull: true,

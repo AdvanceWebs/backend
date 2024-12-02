@@ -86,10 +86,10 @@ async function addUser(user) {
     const response = await axios.post(
       `${process.env.KEYCLOAK_BASE_URL}/admin/realms/${process.env.KEYCLOAK_REALM}/users`,
       {
-        username: user.email,
+        username: user.username,
         email: user.email,
-        firstName: ".",
-        lastName: ".",
+        firstName: user.firstName,
+        lastName: user.lastName,
         enabled: true,
         emailVerified: true,
         credentials: [
@@ -112,8 +112,8 @@ async function addUser(user) {
     if (response.status !== 201) {
       throw new Error("Failed to create user.");
     }
-
-    const foundedUser = await getUser(user.email);
+    console.log(user);
+    const foundedUser = await getUser(user.username);
 
     console.log("User created:", foundedUser);
     return foundedUser; // Trả về thông tin user đã được tạo
