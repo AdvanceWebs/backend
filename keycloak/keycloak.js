@@ -70,12 +70,19 @@ async function connectToKeycloak() {
 }
 
 // Hàm thêm user vào Keycloak
-async function addUser(user) {
-  if (!user || !user.username || !user.email || !user.password) {
-    throw new Error("Missing required user information.");
-  }
-
+async function addUser(user, check) {
   try {
+    const credentials = null;
+    if (check) {
+      credentials = [
+        {
+          type: "password",
+          value: user.password,
+          temporary: false,
+        },
+      ];
+    }
+
     // Kết nối đến Keycloak để lấy token
     const tokenData = await connectToKeycloak();
     console.log("Token data:", tokenData);
@@ -92,13 +99,7 @@ async function addUser(user) {
         lastName: user.lastName,
         enabled: true,
         emailVerified: true,
-        credentials: [
-          {
-            type: "password",
-            value: user.password,
-            temporary: false,
-          },
-        ],
+        credentials: credentials,
       },
       {
         headers: {

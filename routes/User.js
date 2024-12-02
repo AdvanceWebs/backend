@@ -1,5 +1,7 @@
 const express = require("express");
 const handleAccessToken = require("../middlewares/authMiddleware");
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const {
   registerUser,
   loginUserService,
@@ -7,6 +9,8 @@ const {
 } = require("../services/userService");
 const validateUser = require("../validators/userValidator");
 const router = express.Router();
+
+const { handleGoogleCallback } = require("../services/AutheService");
 
 // POST /user/register
 router.post("/register", validateUser, async (req, res) => {
@@ -69,4 +73,35 @@ router.get("/profile", handleAccessToken, async (req, res) => {
   }
 });
 
+router.get(
+  "/callback",
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  async (req, res) => {
+    // Đăng nhập thành công
+
+    const userInfo = userInfoResponse.data;
+    const entity = {
+      username: userInfo.email,
+      email: userInfo.email,
+      firstName: userInfo.given_name || " ",
+      lastName: userInfo.family_name || " ",
+    };
+
+    try {
+      const foundUser = await getProfile(userInfo.email);
+    } catch (error) {
+      if (error.message === "User not found.") {
+        const savedUser = await addUser(entity, false);
+        console.log("User created:", savedUser);
+      }
+    }
+
+    const result = await loginUserService(userInfo.email, null);
+
+    res.json({
+      message: "Đăng nhập thành công!",
+      user: req.user,
+    });
+  }
+);
 module.exports = router;

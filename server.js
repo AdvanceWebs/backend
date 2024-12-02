@@ -10,7 +10,7 @@ connectDB();
 
 // Middleware
 app.use(express.json());
-app.use(cors({ origin: "https://ia4-user-registration-frontend.vercel.app" }));
+app.use(cors({ origin: "https://adw-fe.vercel.app" }));
 
 // Routes
 app.use("/user", require("./routes/user"));

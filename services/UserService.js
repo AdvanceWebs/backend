@@ -25,7 +25,7 @@ const registerUser = async (user) => {
 
   if (existingUser) {
     if (existingUser.email === user.email) {
-      throw new Error("Email already exists.",);
+      throw new Error("Email already exists.");
     }
     if (existingUser.username === user.username) {
       throw new Error("Username already exists.");
@@ -40,7 +40,7 @@ const registerUser = async (user) => {
     lastName: user.lastName || " ",
     password: user.password,
   };
-  const savedKeyCloakUser = await addUser(keyCloakUser);
+  const savedKeyCloakUser = await addUser(keyCloakUser, true);
 
   // Lưu thông tin người dùng vào database
   const entity = {
