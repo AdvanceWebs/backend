@@ -72,7 +72,7 @@ async function connectToKeycloak() {
 // Hàm thêm user vào Keycloak
 async function addUser(user, check) {
   try {
-    const credentials = null;
+    let credentials = null;
     if (check) {
       credentials = [
         {

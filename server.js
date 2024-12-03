@@ -1,6 +1,9 @@
 const express = require("express");
+const session = require("express-session");
 const { connectDB } = require("./config/database");
 const cors = require("cors");
+const passport = require("./middlewares/passport"); // Adjust the path
+
 require("dotenv").config();
 
 const app = express();
@@ -11,6 +14,20 @@ connectDB();
 // Middleware
 app.use(express.json());
 app.use(cors({ origin: "https://adw-fe.vercel.app" }));
+app.use(express.urlencoded({ extended: true }));
+
+// Configure session middleware
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET, // Replace with a secure secret key
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+
+// Initialize Passport.js
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Routes
 app.use("/user", require("./routes/user"));

@@ -1,15 +1,18 @@
 const express = require("express");
 const handleAccessToken = require("../middlewares/authMiddleware");
-const passport = require("passport");
+const passport = require("../middlewares/passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const {
   registerUser,
   loginUserService,
   getProfile,
+  getProfileV2,
 } = require("../services/userService");
 const validateUser = require("../validators/userValidator");
 const router = express.Router();
-
+const { addUser } = require("../keycloak/keycloak");
+const User = require("../models/User");
+const AppSetting = require("../models/AppSetting");
 const { handleGoogleCallback } = require("../services/AutheService");
 
 // POST /user/register
@@ -78,30 +81,62 @@ router.get(
   passport.authenticate("google", { failureRedirect: "/login" }),
   async (req, res) => {
     // Đăng nhập thành công
-
-    const userInfo = userInfoResponse.data;
-    const entity = {
-      username: userInfo.email,
-      email: userInfo.email,
-      firstName: userInfo.given_name || " ",
-      lastName: userInfo.family_name || " ",
-    };
-
+    console.log(req.user);
+    let foundedUser = null;
+    let flag = 0;
+    // Lấy thông tin password mặc định
+    const appSetting = await AppSetting.findOne({
+      where: { settingKey: "PASSWORD_DEFAULT" },
+    });
     try {
-      const foundUser = await getProfile(userInfo.email);
-    } catch (error) {
-      if (error.message === "User not found.") {
-        const savedUser = await addUser(entity, false);
-        console.log("User created:", savedUser);
+      const userInfo = req.user;
+      let entity = {
+        username: userInfo.emails[0].value,
+        email: userInfo.emails[0].value,
+        firstName: userInfo.name.givenName || " ",
+        lastName: userInfo.name.familyName || " ",
+      };
+
+      const result = await getProfileV2(entity.email);
+      if (result.status === true) {
+        foundedUser = result.data;
+      } else {
+        entity.password = appSetting.settingValue;
+
+        const keycloakUser = await addUser(entity, true);
+        flag = 1;
+        console.log("User created:", keycloakUser);
+
+        // Lưu thông tin người dùng vào database
+        const entityUser = {
+          username: keycloakUser.username,
+          email: entity.email,
+          keycloakUserId: keycloakUser.id,
+        };
+        const savedUser = await User.create(entityUser);
+        flag = 2;
+        foundedUser = savedUser;
       }
+    } catch (error) {
+      if (flag === 1) {
+        // Xóa user trên keycloak
+      }
+      console.log("Lỗi trong quá trình xác thực Tokena :", error);
+      res.json({
+        message: "Lỗi hệ thống!",
+      });
     }
 
-    const result = await loginUserService(userInfo.email, null);
-
-    res.json({
-      message: "Đăng nhập thành công!",
-      user: req.user,
-    });
+    // Login để lấy token
+    try {
+      const token = await loginUserService(
+        foundedUser.username,
+        appSetting.settingValue
+      );
+      res.json({ data: token });
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
   }
 );
 module.exports = router;

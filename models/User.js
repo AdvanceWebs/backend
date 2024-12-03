@@ -21,6 +21,10 @@ const User = sequelize.define("User", {
     unique: true,
     required: true, // `required` không phải là một tùy chọn hợp lệ trong Sequelize
   },
+  ssoProvider: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   createdAt: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,

@@ -81,8 +81,33 @@ const getProfile = async (userEmail) => {
   };
 };
 
+// Hàm lấy thông tin người dùng (profile)
+const getProfileV2 = async (userEmail) => {
+  const user = await User.findOne({
+    where: { email: userEmail },
+    attributes: ["id", "email"],
+  });
+  if (!user) {
+    return {
+      status: false,
+      data: null,
+      message: "User not found.",
+    };
+  }
+
+  return {
+    status: true,
+    data: {
+      id: user.id,
+      username: user.email,
+      email: user.email,
+    },
+  };
+};
+
 module.exports = {
   registerUser,
   loginUserService,
   getProfile,
+  getProfileV2,
 };
