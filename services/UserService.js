@@ -54,9 +54,9 @@ const registerUser = async (user) => {
 };
 
 // Hàm xử lý đăng nhập người dùng
-const loginUserService = async (email, password) => {
+const loginUserService = async (email, password, bypassSsoProvider) => {
   // Gọi hàm login từ Keycloak
-  const result = await loginUser(email, password);
+  const result = await loginUser(email, password, bypassSsoProvider);
   if (!result.success) {
     throw new Error(result.message);
   }

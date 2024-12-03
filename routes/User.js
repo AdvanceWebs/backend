@@ -47,7 +47,7 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Missing required information." });
     }
 
-    const token = await loginUserService(email, password);
+    const token = await loginUserService(email, password, false);
     res.json({ data: token });
   } catch (error) {
     console.error(error.message);
@@ -112,6 +112,7 @@ router.get(
           username: keycloakUser.username,
           email: entity.email,
           keycloakUserId: keycloakUser.id,
+          ssoProvider: "GOOGLE",
         };
         const savedUser = await User.create(entityUser);
         flag = 2;
@@ -131,7 +132,8 @@ router.get(
     try {
       const token = await loginUserService(
         foundedUser.username,
-        appSetting.settingValue
+        appSetting.settingValue,
+        true
       );
       res.json({ data: token });
     } catch (error) {

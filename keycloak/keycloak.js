@@ -1,6 +1,7 @@
 const KcAdminClient = require("keycloak-admin").default;
 const axios = require("axios");
 const https = require("https");
+const User = require("../models/User");
 
 require("dotenv").config(); // Đọc biến môi trường từ tệp .env
 
@@ -164,9 +165,21 @@ async function getUser(username) {
 }
 
 // Hàm login user sử dụng axios
-async function loginUser(username, password) {
+async function loginUser(username, password, bypassSsoProvider) {
   if (!username || !password) {
     throw new Error("Username and password are required.");
+  }
+
+  const foundedUser = await User.findOne({
+    where: { username: username },
+  });
+  if (bypassSsoProvider === false) {
+    if (!foundedUser || foundedUser.ssoProvider !== null) {
+      return {
+        success: false,
+        message: "Invalid username or password.",
+      };
+    }
   }
 
   try {
