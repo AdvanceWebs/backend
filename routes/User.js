@@ -84,7 +84,7 @@ router.get(
 );
 
 router.get(
-  "/auth/google/callback",
+  "/callback",
   passport.authenticate("google", { failureRedirect: "/login" }),
   async (req, res) => {
     // Đăng nhập thành công
@@ -148,48 +148,4 @@ router.get(
     }
   }
 );
-
-// Route to initiate GitHub OAuth authentication
-router.get(
-  "/auth/github",
-  passport.authenticate("github", { scope: ["user:email"] })
-);
-
-// GitHub OAuth callback route
-router.get(
-  "/auth/github/callback",
-  passport.authenticate("github", { failureRedirect: "/login" }),
-  async (req, res) => {
-    // Successful authentication
-    console.log("Authenticated user:", req.user);
-
-    const userInfo = req.user._json; // Extract user info from GitHub profile
-    const entity = {
-      username: userInfo.login,
-      email: userInfo.email,
-      firstName: userInfo.name || " ",
-      lastName: "", // GitHub profile does not have separate first and last names
-    };
-
-    try {
-      // Try to find the user in your database
-      const foundUser = await getProfile(userInfo.email);
-    } catch (error) {
-      if (error.message === "User not found.") {
-        // If the user is not found, create a new user
-        const savedUser = await addUser(entity, false);
-        console.log("User created:", savedUser);
-      }
-    }
-
-    // Perform login or create a session for the user
-    // If you have a loginUserService, you can use it here
-
-    res.json({
-      message: "Đăng nhập thành công!",
-      user: userInfo,
-    });
-  }
-);
-
 module.exports = router;
