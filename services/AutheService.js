@@ -50,8 +50,6 @@ const handleGoogleCallback = async (req, res) => {
       }
     );
 
-
-
     // 4. Xử lý hoặc lưu thông tin người dùng
     console.log("Thông tin người dùng:", userInfo);
 

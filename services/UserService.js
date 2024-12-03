@@ -84,8 +84,10 @@ const getProfile = async (userEmail) => {
 // Hàm lấy thông tin người dùng (profile)
 const getProfileV2 = async (userEmail) => {
   const user = await User.findOne({
-    where: { email: userEmail },
-    attributes: ["id", "email"],
+    where: {
+      [Op.or]: [{ email: userEmail }, { username: userEmail }],
+    },
+    attributes: ["id", "email", "username"], // Include username in the attributes
   });
   if (!user) {
     return {
@@ -99,7 +101,7 @@ const getProfileV2 = async (userEmail) => {
     status: true,
     data: {
       id: user.id,
-      username: user.email,
+      username: user.username,
       email: user.email,
     },
   };

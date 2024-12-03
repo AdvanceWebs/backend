@@ -100,13 +100,19 @@ router.get(
       let entity = {
         username: userInfo.emails[0].value,
         email: userInfo.emails[0].value,
-        firstName: userInfo.name.givenName || " ",
-        lastName: userInfo.name.familyName || " ",
+        firstName: userInfo.name.givenName || ". ",
+        lastName: userInfo.name.familyName || ". ",
       };
 
       const result = await getProfileV2(entity.email);
       if (result.status === true) {
         foundedUser = result.data;
+        if (foundedUser.ssoProvider === null) {
+          res.json({
+            success: false,
+            message: "Email đã được một tài khoản khác đăng ký",
+          });
+        }
       } else {
         entity.password = appSetting.settingValue;
 
@@ -131,6 +137,7 @@ router.get(
       }
       console.log("Lỗi trong quá trình xác thực Tokena :", error);
       res.json({
+        success: false,
         message: "Lỗi hệ thống!",
       });
     }
@@ -142,10 +149,109 @@ router.get(
         appSetting.settingValue,
         true
       );
-      res.json({ data: token });
+      res.json({ success: true, data: token });
     } catch (error) {
-      res.status(500).json({ message: "Server error" });
+      res.json({ success: false, message: "Server error" });
     }
   }
 );
+
+// Route to initiate GitHub OAuth authentication
+router.get(
+  "/auth/github",
+  passport.authenticate("github", { scope: ["user:email"] })
+);
+
+// GitHub OAuth callback route
+router.get(
+  "/auth/github/callback",
+  passport.authenticate("github", { failureRedirect: "/login" }),
+  async (req, res) => {
+    let foundedUser = null;
+    let flag = 0;
+    // Lấy thông tin password mặc định
+    const appSetting = await AppSetting.findOne({
+      where: { settingKey: "PASSWORD_DEFAULT" },
+    });
+    try {
+      const userInfo = req.user;
+      let entity = {
+        username: userInfo.username || userInfo.email,
+        email: userInfo.email || `${userInfo.username}@github.com`,
+        firstName: userInfo.firstName || ". ",
+        lastName: userInfo.displayName || ". ",
+      };
+
+      let resultUsername = await getProfileV2(entity.username);
+      let resultEmail = await getProfileV2(entity.email);
+
+      let result = { status: false, data: null };
+
+      if (resultUsername.status === true) {
+        if (resultUsername.data.ssoProvider !== null) {
+          result = resultUsername;
+        } else {
+          res.json({
+            success: false,
+            message: "Username đã được một tài khoản khác đăng ký",
+          });
+        }
+      } else {
+        if (resultEmail.status === true) {
+          if (resultEmail.data.ssoProvider !== null) {
+            result = resultEmail;
+          } else {
+            res.json({
+              success: false,
+              message: "Email đã được một tài khoản khác đăng ký",
+            });
+          }
+        }
+      }
+
+      if (result.status === true) {
+        foundedUser = result.data;
+      } else {
+        entity.password = appSetting.settingValue;
+
+        const keycloakUser = await addUser(entity, true);
+        flag = 1;
+        console.log("User created:", keycloakUser);
+
+        // Lưu thông tin người dùng vào database
+        const entityUser = {
+          username: keycloakUser.username,
+          email: entity.email,
+          keycloakUserId: keycloakUser.id,
+          ssoProvider: "GITHUB",
+        };
+        const savedUser = await User.create(entityUser);
+        flag = 2;
+        foundedUser = savedUser;
+      }
+    } catch (error) {
+      if (flag === 1) {
+        // Xóa user trên keycloak
+      }
+      console.log("Lỗi trong quá trình xác thực Tokena :", error);
+      res.json({
+        success: false,
+        message: "Lỗi hệ thống!",
+      });
+    }
+
+    // Login để lấy token
+    try {
+      const token = await loginUserService(
+        foundedUser.username,
+        appSetting.settingValue,
+        true
+      );
+      res.json({ success: true, data: token });
+    } catch (error) {
+      res.json({ success: false, message: "Lỗi hệ thống!" });
+    }
+  }
+);
+
 module.exports = router;
