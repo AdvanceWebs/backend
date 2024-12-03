@@ -76,6 +76,14 @@ router.get("/profile", handleAccessToken, async (req, res) => {
   }
 });
 
+// Route bắt đầu xác thực với Google
+router.get(
+  "/auth/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"], // Các quyền bạn muốn yêu cầu từ Google
+  })
+);
+
 router.get(
   "/callback",
   passport.authenticate("google", { failureRedirect: "/login" }),
