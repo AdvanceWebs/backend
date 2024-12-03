@@ -2,8 +2,8 @@ const express = require("express");
 const session = require("express-session");
 const { connectDB } = require("./config/database");
 const cors = require("cors");
-const passport = require("./middlewares/passport"); // Adjust the path
-
+const passport = require("passport"); // Adjust the path
+const route = require("./routes/User");
 require("dotenv").config();
 
 const app = express();
@@ -14,14 +14,14 @@ connectDB();
 // Middleware
 app.use(express.json());
 app.use(cors({ origin: "https://adw-fe.vercel.app" }));
-app.use(express.urlencoded({ extended: true }));
+// app.use(express.urlencoded({ extended: true }));
 
 // Configure session middleware
 app.use(
   session({
     secret: process.env.SESSION_SECRET, // Replace with a secure secret key
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
   })
 );
 
@@ -30,7 +30,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Routes
-app.use("/user", require("./routes/user"));
+app.use("/user", route);
 
 // Start server
 const PORT = process.env.PORT || 5000;
