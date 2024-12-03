@@ -7,7 +7,7 @@ const {
   loginUserService,
   getProfile,
   getProfileV2,
-} = require("../services/userService");
+} = require("../services/UserService");
 const validateUser = require("../validators/userValidator");
 const router = express.Router();
 const { addUser } = require("../keycloak/keycloak");
@@ -149,4 +149,4 @@ router.get(
     }
   }
 );
-module.exports = router;
+module.exports = { router };
