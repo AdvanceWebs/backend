@@ -25,20 +25,20 @@ passport.use(
   )
 );
 
-// passport.use(
-//   new GitHubStrategy(
-//     {
-//       clientID: GITHUB_CLIENT_ID,
-//       clientSecret: GITHUB_CLIENT_SECRET,
-//       callbackURL: GITHUB_CALLBACK_URL,
-//     },
-//     async (accessToken, refreshToken, profile, done) => {
-//       // You can save the user to your database here
-//       // For now, we'll just pass the profile on
-//       return done(null, profile);
-//     }
-//   )
-// );
+passport.use(
+  new GitHubStrategy(
+    {
+      clientID: GITHUB_CLIENT_ID,
+      clientSecret: GITHUB_CLIENT_SECRET,
+      callbackURL: GITHUB_CALLBACK_URL,
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      // You can save the user to your database here
+      // For now, we'll just pass the profile on
+      return done(null, profile);
+    }
+  )
+);
 
 passport.serializeUser((user, done) => {
   done(null, user);
