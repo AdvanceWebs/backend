@@ -3,7 +3,7 @@ const session = require("express-session");
 const { connectDB } = require("./config/database");
 const cors = require("cors");
 const passport = require("passport"); // Adjust the path
-const { route } = require("./routes/User");
+const  route  = require("./routes/User");
 require("dotenv").config();
 
 const app = express();
