@@ -1,5 +1,9 @@
 const User = require("../models/User");
-const { addUser, loginUser } = require("../keycloak/keycloak");
+const {
+  addUser,
+  loginUser,
+  updateUserIdInKeycloak,
+} = require("../keycloak/keycloak");
 const { Sequelize, Op } = require("sequelize");
 
 // Hàm xử lý đăng ký người dùng
@@ -49,7 +53,15 @@ const registerUser = async (user) => {
     keycloakUserId: savedKeyCloakUser.id,
   };
   const savedUser = await User.create(entity);
-
+  try {
+    const updatedKeycloakUser = await updateUserIdInKeycloak(
+      savedUser.id,
+      savedKeyCloakUser
+    );
+  } catch (err) {
+    console.error("Error updating user:", err.message);
+    throw err;
+  }
   return savedUser;
 };
 

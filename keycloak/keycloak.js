@@ -125,6 +125,38 @@ async function addUser(user, check) {
   }
 }
 
+// Hàm cập nhật userId cho user
+async function updateUserIdInKeycloak(userId, userKeycloak) {
+  // Kết nối đến Keycloak để lấy token
+  const tokenData = await connectToKeycloak();
+  console.log("Token data:", tokenData);
+  // Lấy token từ phản hồi của Keycloak
+  const token = tokenData.access_token;
+
+  const response = await axios.put(
+    `${process.env.KEYCLOAK_BASE_URL}/admin/realms/${process.env.KEYCLOAK_REALM}/users/${userKeycloak.id}`,
+    {
+      username: userKeycloak.username,
+      email: userKeycloak.email,
+      firstName: userKeycloak.firstName,
+      lastName: userKeycloak.lastName,
+      enabled: true,
+      emailVerified: true,
+      attributes: {
+        userId: userId, // Thêm userId vào attributes
+      },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      httpsAgent: agent, // Sử dụng agent đã cấu hình
+    }
+  );
+  return response.data;
+}
+
 async function getUser(username) {
   if (!username) {
     throw new Error("Missing required username.");
@@ -230,4 +262,5 @@ module.exports = {
   connectToKeycloak,
   addUser,
   loginUser,
+  updateUserIdInKeycloak,
 };
