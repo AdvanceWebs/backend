@@ -12,7 +12,7 @@ const router = express.Router();
 const { addUser } = require("../keycloak/keycloak");
 const User = require("../models/User");
 const AppSetting = require("../models/AppSetting");
-const { handleGoogleCallback } = require("../services/AutheService");
+const { handleGoogleCallback } = require("../services/AuthService");
 
 // POST /user/register
 router.post("/register", validateUser, async (req, res) => {
