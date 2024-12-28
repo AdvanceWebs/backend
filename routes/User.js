@@ -142,7 +142,8 @@ router.get(
 
         const updatedKeycloakUser = await updateUserIdInKeycloak(
           savedUser.id,
-          keycloakUser
+          keycloakUser,
+          true
         );
       }
     } catch (error) {
@@ -245,7 +246,8 @@ router.get(
 
         const updatedKeycloakUser = await updateUserIdInKeycloak(
           savedUser.id,
-          keycloakUser
+          keycloakUser,
+          true
         );
       }
     } catch (error) {
