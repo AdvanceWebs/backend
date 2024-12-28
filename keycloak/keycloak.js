@@ -71,7 +71,7 @@ async function connectToKeycloak() {
 }
 
 // Hàm thêm user vào Keycloak
-async function addUser(user, check) {
+async function addUser(user, check, emailVerified = false) {
   try {
     let credentials = null;
     if (check) {
@@ -99,7 +99,7 @@ async function addUser(user, check) {
         firstName: user.firstName,
         lastName: user.lastName,
         enabled: true,
-        emailVerified: true,
+        emailVerified: emailVerified,
         credentials: credentials,
       },
       {
@@ -126,7 +126,11 @@ async function addUser(user, check) {
 }
 
 // Hàm cập nhật userId cho user
-async function updateUserIdInKeycloak(userId, userKeycloak) {
+async function updateUserIdInKeycloak(
+  userId,
+  userKeycloak,
+  emailVerified = false
+) {
   // Kết nối đến Keycloak để lấy token
   const tokenData = await connectToKeycloak();
   console.log("Token data:", tokenData);
@@ -141,7 +145,7 @@ async function updateUserIdInKeycloak(userId, userKeycloak) {
       firstName: userKeycloak.firstName,
       lastName: userKeycloak.lastName,
       enabled: true,
-      emailVerified: true,
+      emailVerified: emailVerified,
       attributes: {
         userId: userId, // Thêm userId vào attributes
       },
@@ -155,6 +159,36 @@ async function updateUserIdInKeycloak(userId, userKeycloak) {
     }
   );
   return response.data;
+}
+
+// Hàm cập nhật trường email_verified
+async function updateEmailVerified(userId, isVerified) {
+  try {
+    // Kết nối đến Keycloak để lấy token
+    const tokenData = await connectToKeycloak();
+    console.log("Token data:", tokenData);
+    // Lấy token từ phản hồi của Keycloak
+    const token = tokenData.access_token;
+    const response = await axios.put(
+      `${process.env.KEYCLOAK_BASE_URL}/admin/realms/${process.env.KEYCLOAK_REALM}/users/${userKeycloak.id}`,
+      { emailVerified: isVerified }, // Cập nhật trường email_verified
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        httpsAgent: agent, // Sử dụng agent đã cấu hình
+      }
+    );
+
+    console.log("User updated successfully:", response.status);
+  } catch (error) {
+    console.error(
+      "Error updating user:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
 }
 
 async function getUser(username) {
@@ -241,6 +275,17 @@ async function loginUser(username, password, bypassSsoProvider) {
 
     // Trích xuất token từ phản hồi
     const { access_token, refresh_token, expires_in } = response.data;
+    // Giải mã access_token
+    const decoded = jwt.decode(access_token);
+
+    // Lấy trường email_verified
+    const emailVerified = decoded.email_verified;
+    if (!emailVerified) {
+      return {
+        success: false,
+        message: "Account not verified.",
+      };
+    }
 
     console.log("User logged in successfully.", response);
     return {
@@ -263,4 +308,5 @@ module.exports = {
   addUser,
   loginUser,
   updateUserIdInKeycloak,
+  updateEmailVerified,
 };

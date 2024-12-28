@@ -6,6 +6,7 @@ const {
   loginUserService,
   getProfile,
   getProfileV2,
+  verifyActivation,
 } = require("../services/UserService");
 const validateUser = require("../validators/userValidator");
 const router = express.Router();
@@ -253,5 +254,19 @@ router.get(
     }
   }
 );
+
+// Kích hoạt tài khoản
+router.get("/activate/:token", async (req, res) => {
+  const { token } = req.params;
+
+  try {
+    await verifyActivation(token);
+    res.status(200).json({ message: "Account activated successfully!" });
+  } catch (error) {
+    res
+      .status(400)
+      .json({ message: "Invalid or expired token", error: error.message });
+  }
+});
 
 module.exports = router;
