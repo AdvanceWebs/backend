@@ -8,9 +8,14 @@ const {
   getProfileV2,
   verifyActivation,
 } = require("../services/UserService");
+const {
+  addUser,
+  loginUser,
+  updateUserIdInKeycloak,
+  updateEmailVerified,
+} = require("../keycloak/keycloak");
 const validateUser = require("../validators/userValidator");
 const router = express.Router();
-const { addUser } = require("../keycloak/keycloak");
 const User = require("../models/User");
 const AppSetting = require("../models/AppSetting");
 const { handleGoogleCallback } = require("../services/AuthService");
@@ -22,7 +27,7 @@ router.post("/register", validateUser, async (req, res) => {
   try {
     const savedUser = await registerUser(user);
     console.log("User created:", savedUser);
-    res.status(201).json({ message: "User registered successfully" });
+    res.status(201).json({ message: "Check email to activate your account" });
   } catch (error) {
     console.error(error.message);
     if (error.message === "Email already exists.") {
@@ -134,6 +139,11 @@ router.get(
         const savedUser = await User.create(entityUser);
         flag = 2;
         foundedUser = savedUser;
+
+        const updatedKeycloakUser = await updateUserIdInKeycloak(
+          savedUser.id,
+          keycloakUser
+        );
       }
     } catch (error) {
       if (flag === 1) {
@@ -232,6 +242,11 @@ router.get(
         const savedUser = await User.create(entityUser);
         flag = 2;
         foundedUser = savedUser;
+
+        const updatedKeycloakUser = await updateUserIdInKeycloak(
+          savedUser.id,
+          keycloakUser
+        );
       }
     } catch (error) {
       if (flag === 1) {
