@@ -258,14 +258,127 @@ router.get(
 // Kích hoạt tài khoản
 router.get("/activate/:token", async (req, res) => {
   const { token } = req.params;
-
   try {
     await verifyActivation(token);
-    res.status(200).json({ message: "Account activated successfully!" });
+    res.status(200).send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Account Activation</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+          }
+          .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+          }
+          h1 {
+            color: #4CAF50;
+            font-size: 24px;
+            margin-bottom: 10px;
+          }
+          p {
+            color: #555;
+            font-size: 16px;
+            margin-bottom: 20px;
+          }
+          a {
+            text-decoration: none;
+            color: white;
+            background-color: #4CAF50;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+          }
+          a:hover {
+            background-color: #45a049;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>Account Activated!</h1>
+          <p>Your account has been successfully activated. You can now log in and start using our services.</p>
+          <a href="${process.env.FRONTEND_SERVICE}/login">Go to Login</a>
+        </div>
+      </body>
+      </html>
+    `);
   } catch (error) {
-    res
-      .status(400)
-      .json({ message: "Invalid or expired token", error: error.message });
+    res.status(400).send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Account Activation</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+          }
+          .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+          }
+          h1 {
+            color: #ff4d4d;
+            font-size: 24px;
+            margin-bottom: 10px;
+          }
+          p {
+            color: #555;
+            font-size: 16px;
+            margin-bottom: 20px;
+          }
+          a {
+            text-decoration: none;
+            color: white;
+            background-color: #007bff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+          }
+          a:hover {
+            background-color: #0056b3;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>Activation Failed</h1>
+          <p>${error.message}</p>
+          <a href="/resend-activation">Resend Activation Link</a>
+        </div>
+      </body>
+      </html>
+    `);
   }
 });
 

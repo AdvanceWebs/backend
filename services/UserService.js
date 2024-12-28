@@ -143,7 +143,7 @@ const sendActivationEmail = async (email, token) => {
     },
   });
 
-  const activationLink = `${process.env.AUTH_SERVICE}/auth/activate/${token}`;
+  const activationLink = `${process.env.AUTH_SERVICE}/user/activate/${token}`;
   console.log("Email: ", email);
   transporter.sendMail(
     {

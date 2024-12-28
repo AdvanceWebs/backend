@@ -170,7 +170,7 @@ async function updateEmailVerified(userId, isVerified) {
     // Lấy token từ phản hồi của Keycloak
     const token = tokenData.access_token;
     const response = await axios.put(
-      `${process.env.KEYCLOAK_BASE_URL}/admin/realms/${process.env.KEYCLOAK_REALM}/users/${userKeycloak.id}`,
+      `${process.env.KEYCLOAK_BASE_URL}/admin/realms/${process.env.KEYCLOAK_REALM}/users/${userId}`,
       { emailVerified: isVerified }, // Cập nhật trường email_verified
       {
         headers: {
