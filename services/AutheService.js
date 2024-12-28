@@ -15,13 +15,6 @@ const handleGoogleCallback = async (req, res) => {
     if (!code) {
       return res.status(400).json({ error: "Authorization code not found" });
     }
-    console.log(
-      "in env: ",
-      GOOGLE_CLIENT_ID,
-      GOOGLE_CLIENT_SECRET,
-      GOOGLE_REDIRECT_URI
-    );
-
     try {
       console.log("Lỗi trong quá trình xác thực Tokena :", code);
       const tokenResponse = await axios.post(
