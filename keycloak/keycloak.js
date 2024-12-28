@@ -2,6 +2,7 @@ const KcAdminClient = require("keycloak-admin").default;
 const axios = require("axios");
 const https = require("https");
 const User = require("../models/User");
+const jwt = require("jsonwebtoken");
 
 require("dotenv").config(); // Đọc biến môi trường từ tệp .env
 

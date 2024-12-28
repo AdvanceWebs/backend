@@ -54,6 +54,9 @@ router.post("/login", async (req, res) => {
     if (error.message === "Invalid username or password.") {
       return res.status(401).json({ message: error.message });
     }
+    if (error.message === "Account not verified.") {
+      return res.status(401).json({ message: error.message });
+    }
     if (error.message === "Username and password are required.") {
       return res.status(400).json({ message: error.message });
     }
