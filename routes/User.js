@@ -120,7 +120,7 @@ router.get(
       } else {
         entity.password = appSetting.settingValue;
 
-        const keycloakUser = await addUser(entity, true);
+        const keycloakUser = await addUser(entity, true, true);
         flag = 1;
         console.log("User created:", keycloakUser);
 
@@ -218,7 +218,7 @@ router.get(
       } else {
         entity.password = appSetting.settingValue;
 
-        const keycloakUser = await addUser(entity, true);
+        const keycloakUser = await addUser(entity, true, true);
         flag = 1;
         console.log("User created:", keycloakUser);
 
