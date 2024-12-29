@@ -303,6 +303,40 @@ async function loginUser(username, password, bypassSsoProvider) {
     };
   }
 }
+
+async function updateUserPassword(user, newPassword) {
+  try {
+    // Kết nối đến Keycloak để lấy token
+    const tokenData = await connectToKeycloak();
+    console.log("Token data:", tokenData);
+    const token = tokenData.access_token; // Lấy token từ phản hồi của Keycloak
+
+    // Update user password in Keycloak
+    const userId = user.keycloakUserId; // Assuming you store Keycloak user ID in your user model
+    const response = await axios.put(
+      `${process.env.KEYCLOAK_BASE_URL}/admin/realms/${process.env.KEYCLOAK_REALM}/users/${userId}/reset-password`,
+      {
+        type: "password",
+        value: newPassword,
+        temporary: false,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        httpsAgent: agent, // Sử dụng agent đã cấu hình nếu cần
+      }
+    );
+
+    console.log("Password updated successfully: ", response);
+    return { success: true, message: "Password updated successfully" };
+  } catch (error) {
+    console.error("Error updating password in Keycloak:", error.message);
+    return { success: false, message: "Internal error!" };
+  }
+}
+
 // Export cả hai hàm để sử dụng ở nơi khác
 module.exports = {
   connectToKeycloak,
@@ -310,4 +344,5 @@ module.exports = {
   loginUser,
   updateUserIdInKeycloak,
   updateEmailVerified,
+  updateUserPassword,
 };

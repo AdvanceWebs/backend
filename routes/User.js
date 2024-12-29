@@ -7,6 +7,8 @@ const {
   getProfile,
   getProfileV2,
   verifyActivation,
+  sendLinkResetPassword,
+  resetPasswordService,
 } = require("../services/UserService");
 const {
   addUser,
@@ -274,6 +276,38 @@ router.get(
     }
   }
 );
+
+// Forgot password route
+router.post("/forgot-password", async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+    await sendLinkResetPassword(email);
+    res.json({ success: true, message: "Reset link sent to email" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+// Reset password route
+router.post("/reset-password", async (req, res) => {
+  const { token, password } = req.body;
+  try {
+    const result = await resetPasswordService(token, password);
+    if (result.success === false) {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+
+    res.json({ success: true, message: "Password has been reset" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
 
 // Kích hoạt tài khoản
 router.get("/activate/:token", async (req, res) => {

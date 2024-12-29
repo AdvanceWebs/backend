@@ -4,6 +4,7 @@ const {
   loginUser,
   updateUserIdInKeycloak,
   updateEmailVerified,
+  updateUserPassword,
 } = require("../keycloak/keycloak");
 const { Sequelize, Op } = require("sequelize");
 const bcrypt = require("bcrypt");
@@ -207,10 +208,75 @@ const verifyActivation = async (token) => {
   }
 };
 
+const sendLinkResetPassword = async (email, req) => {
+  try {
+    const token = jwt.sign({ email: email }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      to: email,
+      from: process.env.EMAIL_USER,
+      subject: "Password Reset",
+      html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+        <h2 style="color: #333;">Password Reset Request</h2>
+        <p>You are receiving this because you (or someone else) have requested the reset of the password for your account.</p>
+        <p>Please click on the following link, or paste this into your browser to complete the process:</p>
+        <p>
+          <a href="http://${
+            process.env.FRONTEND_SERVICE
+          }/reset-password/${token}" style="color: #1a73e8;">
+            Reset Password
+          </a>
+        </p>
+        <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
+        <div style="text-align: center; padding: 10px 0; border-top: 1px solid #ddd; margin-top: 20px;">
+          <p style="font-size: 12px; color: #aaa;">&copy; ${new Date().getFullYear()} Your App. All rights reserved.</p>
+        </div>
+      </div>
+    `,
+    };
+
+    transporter.sendMail(mailOptions);
+    console.log("Reset link sent to email");
+  } catch (error) {
+    console.error("Error sending reset link:", error.message);
+    throw error;
+  }
+};
+
+const resetPasswordService = async (token, password) => {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const email = decoded.email;
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return { success: false, message: "Invalid token or user not found" };
+    }
+    const result = await updateUserPassword(user, password);
+    return result;
+  } catch (error) {
+    console.error("Error ", error.message);
+    throw error;
+  }
+};
+
 module.exports = {
   registerUser,
   loginUserService,
   getProfile,
   getProfileV2,
   verifyActivation,
+  sendLinkResetPassword,
+  resetPasswordService,
 };
