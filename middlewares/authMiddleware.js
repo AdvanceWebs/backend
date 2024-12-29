@@ -52,6 +52,53 @@ const handleAccessToken = async (req, res, next) => {
   }
 };
 
+const checkAdmin = async (req, res, next) => {
+  try {
+    // Lấy Access Token từ header Authorization
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res
+        .status(401)
+        .json({ message: "Access token is missing or invalid." });
+    }
+
+    // Extract token từ header
+    const token = authHeader.split(" ")[1];
+
+    // Giải mã phần header của JWT để lấy `kid`
+    const decodedHeader = jwt.decode(token, { complete: true });
+    if (!decodedHeader || !decodedHeader.header.kid) {
+      return res.status(401).json({ message: "Invalid token header." });
+    }
+
+    const kid = decodedHeader.header.kid;
+
+    // Lấy public key tương ứng với `kid`
+    const publicKey = await getKeycloakPublicKeyByKid(kid);
+
+    // Xác minh Access Token bằng public key
+    const decodedToken = jwt.verify(token, publicKey, {
+      algorithms: ["RS256"], // Keycloak sử dụng RS256
+    });
+
+    if (decodedToken.realm_access.roles.includes("admin")) {
+      req.user = {
+        username: decodedToken.preferred_username,
+        email: decodedToken.email,
+      };
+      console.log("Access token is valid:", req.user);
+      next(); // Chuyển sang middleware hoặc route handler tiếp theo
+    } else {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+  } catch (err) {
+    console.error("Error handling access token:", err.message);
+    return res
+      .status(401)
+      .json({ message: "Invalid or expired access token." });
+  }
+};
+
 // Hàm lấy đúng public key từ Keycloak dựa trên `kid`
 const getKeycloakPublicKeyByKid = async (kid) => {
   try {
@@ -82,4 +129,4 @@ const getKeycloakPublicKeyByKid = async (kid) => {
     throw new Error("Failed to fetch Keycloak public key.");
   }
 };
-module.exports = handleAccessToken;
+module.exports = { handleAccessToken, checkAdmin };

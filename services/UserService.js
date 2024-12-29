@@ -5,6 +5,7 @@ const {
   updateUserIdInKeycloak,
   updateEmailVerified,
   updateUserPassword,
+  addRoleToUser,
 } = require("../keycloak/keycloak");
 const { Sequelize, Op } = require("sequelize");
 const bcrypt = require("bcrypt");
@@ -271,6 +272,23 @@ const resetPasswordService = async (token, password) => {
   }
 };
 
+const upgradeUserVip = async (email) => {
+  try {
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return { success: false, message: "User not found" };
+    }
+    const result = await addRoleToUser(user, "user-vip");
+    if (result.success === true) {
+      return { success: true, message: "User is upgraded to VIP" };
+    }
+    return { success: false, message: "Error upgrading user to VIP" };
+  } catch (error) {
+    console.error("Error ", error.message);
+    throw error;
+  }
+};
+
 module.exports = {
   registerUser,
   loginUserService,
@@ -279,4 +297,5 @@ module.exports = {
   verifyActivation,
   sendLinkResetPassword,
   resetPasswordService,
+  upgradeUserVip,
 };

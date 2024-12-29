@@ -1,5 +1,8 @@
 const express = require("express");
-const handleAccessToken = require("../middlewares/authMiddleware");
+const {
+  handleAccessToken,
+  checkAdmin,
+} = require("../middlewares/authMiddleware");
 const passport = require("../middlewares/passport");
 const {
   registerUser,
@@ -9,6 +12,7 @@ const {
   verifyActivation,
   sendLinkResetPassword,
   resetPasswordService,
+  upgradeUserVip,
 } = require("../services/UserService");
 const {
   addUser,
@@ -281,7 +285,7 @@ router.get(
 router.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ where: { email } });
     if (!user) {
       return res
         .status(404)
@@ -433,6 +437,20 @@ router.get("/activate/:token", async (req, res) => {
       </body>
       </html>
     `);
+  }
+});
+
+// Tăng hạng thành viên cho user lên role user-vip
+router.post("/upgrade-vip", checkAdmin, async (req, res) => {
+  const { email } = req.body; // Use req.body instead of req.params for email
+  try {
+    const result = await upgradeUserVip(email);
+    if (result.success === false) {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+    res.json({ success: true, message: "User upgraded to VIP role" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
 

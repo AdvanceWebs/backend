@@ -337,6 +337,50 @@ async function updateUserPassword(user, newPassword) {
   }
 }
 
+async function addRoleToUser(user, roleName) {
+  try {
+    // Kết nối đến Keycloak để lấy token
+    const tokenData = await connectToKeycloak();
+    console.log("Token data:", tokenData);
+    const token = tokenData.access_token; // Lấy token từ phản hồi của Keycloak
+
+    // Find the role by name
+    const roleResponse = await axios.get(
+      `${process.env.KEYCLOAK_BASE_URL}/admin/realms/${process.env.KEYCLOAK_REALM}/roles/${roleName}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        httpsAgent: agent, // Sử dụng agent đã cấu hình nếu cần
+      }
+    );
+
+    const role = roleResponse.data;
+    if (!role) {
+      throw new Error("Role not found");
+    }
+
+    // Assign the role to the user
+    await axios.post(
+      `${process.env.KEYCLOAK_BASE_URL}/admin/realms/${process.env.KEYCLOAK_REALM}/users/${user.keycloakUserId}/role-mappings/realm`,
+      [role],
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        httpsAgent: agent, // Sử dụng agent đã cấu hình nếu cần
+      }
+    );
+
+    console.log("Role added successfully to user");
+    return { success: true, message: "Role added successfully to user" };
+  } catch (error) {
+    console.error("Error adding role to user:", error.message);
+    throw error;
+  }
+}
+
 // Export cả hai hàm để sử dụng ở nơi khác
 module.exports = {
   connectToKeycloak,
@@ -345,4 +389,5 @@ module.exports = {
   updateUserIdInKeycloak,
   updateEmailVerified,
   updateUserPassword,
+  addRoleToUser,
 };
