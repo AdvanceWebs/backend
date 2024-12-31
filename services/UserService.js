@@ -233,7 +233,7 @@ const sendLinkResetPassword = async (email, req) => {
         <p>You are receiving this because you (or someone else) have requested the reset of the password for your account.</p>
         <p>Please click on the following link, or paste this into your browser to complete the process:</p>
         <p>
-          <a href="http://${
+          <a href="${
             process.env.FRONTEND_SERVICE
           }/reset-password/${token}" style="color: #1a73e8;">
             Reset Password
