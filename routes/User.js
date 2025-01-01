@@ -13,6 +13,7 @@ const {
   sendLinkResetPassword,
   resetPasswordService,
   upgradeUserVip,
+  updateProfile,
 } = require("../services/UserService");
 const {
   addUser,

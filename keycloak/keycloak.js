@@ -203,8 +203,6 @@ async function updateUserInfoInKeyCloak(userId, userKeycloak) {
     const response = await axios.put(
       `${process.env.KEYCLOAK_BASE_URL}/admin/realms/${process.env.KEYCLOAK_REALM}/users/${userId}`,
       {
-        username: userKeycloak.username,
-        email: userKeycloak.email,
         firstName: userKeycloak.firstName,
         lastName: userKeycloak.lastName,
       }, // Cập nhật trường email_verified
@@ -218,6 +216,7 @@ async function updateUserInfoInKeyCloak(userId, userKeycloak) {
     );
 
     console.log("User updated successfully:", response.status);
+    return getUser(userKeycloak.username);
   } catch (error) {
     console.error(
       "Error updating user:",

@@ -124,7 +124,21 @@ const updateProfile = async (userEmail, newInfoUser) => {
     throw new Error("User not found.");
   }
 
-  const userKeycloak = await getUser(user.username);
+  // Giữ nguyên thông tin username và email
+  newInfoUser.username = user.username;
+  newInfoUser.email = user.email;
+
+  // Cập nhật thông tin người dùng trên Keycloak
+  const userKeycloak = await updateUserInfoInKeyCloak(
+    user.keycloakUserId,
+    newInfoUser
+  );
+
+  // Cập nhật thông tin người dùng trong database
+  user.phoneNumber = newInfoUser.phoneNumber;
+  user.address = newInfoUser.address;
+  user.description = newInfoUser.description;
+  await user.save();
 
   return {
     id: user.id,
@@ -257,7 +271,7 @@ const sendLinkResetPassword = async (email, req) => {
     });
 
     const mailOptions = {
-      to: email,
+      to: `"To Do App" <${process.env.EMAIL_USER}>`,
       from: process.env.EMAIL_USER,
       subject: "Password Reset",
       html: `
