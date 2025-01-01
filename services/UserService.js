@@ -304,9 +304,10 @@ const sendLinkResetPassword = async (email, req) => {
 
 const resetPasswordService = async (token, password) => {
   try {
+    let email = null;
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const email = decoded.email;
+      email = decoded.email;
     } catch (error) {
       return { success: false, message: "Invalid token" };
     }
