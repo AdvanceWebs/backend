@@ -271,8 +271,8 @@ const sendLinkResetPassword = async (email, req) => {
     });
 
     const mailOptions = {
-      to: `"To Do App" <${process.env.EMAIL_USER}>`,
-      from: process.env.EMAIL_USER,
+      from: `"To Do App" <${process.env.EMAIL_USER}>`,
+      to: email,
       subject: "Password Reset",
       html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6;">
