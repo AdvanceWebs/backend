@@ -320,9 +320,13 @@ router.post("/reset-password", async (req, res) => {
   try {
     const result = await resetPasswordService(token, password);
     if (result.success === false) {
+      if (result.message === "Invalid token") {
+        return res
+          .status(401)
+          .json({ success: false, message: result.message });
+      }
       return res.status(400).json({ success: false, message: result.message });
     }
-
     res.json({ success: true, message: "Password has been reset" });
   } catch (error) {
     res.status(500).json({ success: false, message: "Internal server error" });
