@@ -80,7 +80,22 @@ router.post("/login", async (req, res) => {
 router.get("/profile", handleAccessToken, async (req, res) => {
   try {
     const userProfile = await getProfile(req.user.email);
-    res.json(userProfile);
+    res.status(200).json(userProfile);
+  } catch (error) {
+    console.error(error.message);
+    if (error.message === "User not found") {
+      return res.status(404).json({ message: error.message });
+    }
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Profile Route (Protected)
+router.put("/profile", handleAccessToken, async (req, res) => {
+  try {
+    const newInfoUser = req.body;
+    const userProfile = await updateProfile(req.user.email, newInfoUser);
+    res.status(201).json(userProfile);
   } catch (error) {
     console.error(error.message);
     if (error.message === "User not found") {

@@ -1,0 +1,125 @@
+public class QueryHelper {
+
+    /**
+     * Tạo query động từ các thành phần cơ bản.
+     *
+     * @param baseQuery     Câu lệnh SELECT và FROM cơ bản (không chứa ORDER BY, LIMIT).
+     * @param whereClause   Phần điều kiện WHERE (nếu có).
+     * @param sort          Thông tin Sort từ Pageable.
+     * @param columnMapping Ánh xạ tên property DTO sang cột trong SQL.
+     * @param pageable      Pageable object để phân trang.
+     * @return Map<String, Object>: fullQuery, countQuery, parameters
+     */
+    public static Map<String, Object> createQuery(
+            String baseQuery,
+            String whereClause,
+            Sort sort,
+            Map<String, String> columnMapping,
+            Pageable pageable
+    ) {
+        // Build ORDER BY clause (only 1 column)
+        String orderByClause = "";
+        if (sort.isSorted()) {
+            Sort.Order order = sort.iterator().next(); // Chỉ lấy cột đầu tiên
+            String columnName = columnMapping.get(order.getProperty());
+            if (columnName == null) {
+                throw new IllegalArgumentException("Unknown sort property: " + order.getProperty());
+            }
+            String direction = order.isAscending() ? "ASC" : "DESC";
+            orderByClause = "ORDER BY " + columnName + " " + direction;
+        }
+
+        // Build full query
+        String fullQuery = baseQuery;
+        if (!whereClause.isBlank()) {
+            fullQuery += " WHERE " + whereClause;
+        }
+        if (!orderByClause.isBlank()) {
+            fullQuery += " " + orderByClause;
+        }
+
+        // Build count query
+        String countQuery = "SELECT COUNT(*) FROM (" + baseQuery + ") subquery";
+        if (!whereClause.isBlank()) {
+            countQuery += " WHERE " + whereClause;
+        }
+
+        // Pagination
+        int offset = (int) pageable.getOffset();
+        int limit = pageable.getPageSize();
+        fullQuery += " LIMIT " + limit + " OFFSET " + offset;
+
+        // Return results
+        Map<String, Object> result = new HashMap<>();
+        result.put("fullQuery", fullQuery);
+        result.put("countQuery", countQuery);
+        return result;
+    }
+}
+
+
+
+@Repository
+public class OrderCustomRepositoryImpl implements OrderCustomRepository {
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Override
+    public Page<OrderDetailsDTO> findOrdersWithDynamicSortingAndPagination(
+            String customerName, 
+            String productName, 
+            Pageable pageable) {
+        // Base SQL query
+        String baseQuery = "SELECT o.id AS orderId, c.name AS customerName, p.name AS productName, o.order_date AS orderDate " +
+                           "FROM orders o " +
+                           "JOIN customer c ON o.customer_id = c.id " +
+                           "JOIN product p ON o.product_id = p.id";
+
+        // WHERE clause
+        String whereClause = "c.name LIKE :customerName AND p.name LIKE :productName";
+
+        // Column mapping
+        Map<String, String> columnMapping = Map.of(
+            "customerName", "c.name",
+            "productName", "p.name",
+            "orderDate", "o.order_date"
+        );
+
+        // Create query using utility
+        Map<String, Object> queryInfo = QueryHelper.createQuery(
+                baseQuery,
+                whereClause,
+                pageable.getSort(),
+                columnMapping,
+                pageable
+        );
+
+        String fullQuery = (String) queryInfo.get("fullQuery");
+        String countQuery = (String) queryInfo.get("countQuery");
+
+        // Execute full query
+        Query query = entityManager.createNativeQuery(fullQuery, "OrderDetailsMapping");
+        query.setParameter("customerName", "%" + customerName + "%");
+        query.setParameter("productName", "%" + productName + "%");
+        List<Object[]> results = query.getResultList();
+
+        // Execute count query
+        Query countQueryObject = entityManager.createNativeQuery(countQuery);
+        countQueryObject.setParameter("customerName", "%" + customerName + "%");
+        countQueryObject.setParameter("productName", "%" + productName + "%");
+        long totalElements = ((Number) countQueryObject.getSingleResult()).longValue();
+
+        // Map results to DTO
+        List<OrderDetailsDTO> dtos = results.stream()
+                .map(record -> new OrderDetailsDTO(
+                        ((Number) record[0]).longValue(),
+                        (String) record[1],
+                        (String) record[2],
+                        ((java.sql.Timestamp) record[3]).toLocalDateTime()
+                ))
+                .toList();
+
+        return new PageImpl<>(dtos, pageable, totalElements);
+    }
+}

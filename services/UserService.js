@@ -6,6 +6,8 @@ const {
   updateEmailVerified,
   updateUserPassword,
   addRoleToUser,
+  getUser,
+  updateUserInfoInKeyCloak,
 } = require("../keycloak/keycloak");
 const { Sequelize, Op } = require("sequelize");
 const bcrypt = require("bcrypt");
@@ -93,16 +95,47 @@ const loginUserService = async (email, password, bypassSsoProvider) => {
 const getProfile = async (userEmail) => {
   const user = await User.findOne({
     where: { email: userEmail },
-    attributes: ["id", "email"],
   });
   if (!user) {
     throw new Error("User not found.");
   }
 
+  const userKeycloak = await getUser(user.username);
+
   return {
     id: user.id,
     username: user.email,
     email: user.email,
+    ssoProvider: user.ssoProvider,
+    phoneNumber: user.phoneNumber,
+    address: user.address,
+    description: user.description,
+    firstName: userKeycloak.firstName,
+    lastName: userKeycloak.lastName,
+  };
+};
+
+// Hàm lấy thông tin người dùng (profile)
+const updateProfile = async (userEmail, newInfoUser) => {
+  const user = await User.findOne({
+    where: { email: userEmail },
+  });
+  if (!user) {
+    throw new Error("User not found.");
+  }
+
+  const userKeycloak = await getUser(user.username);
+
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    ssoProvider: user.ssoProvider,
+    phoneNumber: user.phoneNumber,
+    address: user.address,
+    description: user.description,
+    firstName: userKeycloak.firstName,
+    lastName: userKeycloak.lastName,
   };
 };
 
@@ -298,4 +331,5 @@ module.exports = {
   sendLinkResetPassword,
   resetPasswordService,
   upgradeUserVip,
+  updateProfile,
 };

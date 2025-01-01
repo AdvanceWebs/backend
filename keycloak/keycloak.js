@@ -192,6 +192,41 @@ async function updateEmailVerified(userId, isVerified) {
   }
 }
 
+// Hàm cập nhật thông tin của user
+async function updateUserInfoInKeyCloak(userId, userKeycloak) {
+  try {
+    // Kết nối đến Keycloak để lấy token
+    const tokenData = await connectToKeycloak();
+    console.log("Token data:", tokenData);
+    // Lấy token từ phản hồi của Keycloak
+    const token = tokenData.access_token;
+    const response = await axios.put(
+      `${process.env.KEYCLOAK_BASE_URL}/admin/realms/${process.env.KEYCLOAK_REALM}/users/${userId}`,
+      {
+        username: userKeycloak.username,
+        email: userKeycloak.email,
+        firstName: userKeycloak.firstName,
+        lastName: userKeycloak.lastName,
+      }, // Cập nhật trường email_verified
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        httpsAgent: agent, // Sử dụng agent đã cấu hình
+      }
+    );
+
+    console.log("User updated successfully:", response.status);
+  } catch (error) {
+    console.error(
+      "Error updating user:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+}
+
 async function getUser(username) {
   if (!username) {
     throw new Error("Missing required username.");
@@ -390,4 +425,6 @@ module.exports = {
   updateEmailVerified,
   updateUserPassword,
   addRoleToUser,
+  getUser,
+  updateUserInfoInKeyCloak,
 };
