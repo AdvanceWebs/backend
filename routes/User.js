@@ -474,4 +474,85 @@ router.post("/upgrade-vip", checkAdmin, async (req, res) => {
   }
 });
 
+// Tạo link thanh toán momo
+router.post("/create-payment", handleAccessToken, async (req, res) => {
+  const momoConfig = require("../config/momo");
+  const { partnerCode, accessKey, secretKey, requestType, endpoint } = momoConfig;
+  const amount = '50000';
+  const orderId = `MOMO${new Date().getTime()}`;
+  const requestId = `${new Date().getTime()}`;
+  const orderInfo = `Upgrade account`;
+  const redirectUrl = "https://power-ai-theta.vercel.app";
+  const ipnUrl = `https://4be0-2405-4802-8116-2430-a993-acae-e6b0-68ee.ngrok-free.app/user/momo-callback`;
+  const extraData = Buffer.from(JSON.stringify({ email: req.body.email })).toString('base64');;
+  const paymentCode = 'T8Qii53fAXyUftPV3m9ysyRhEanUs9KlOPfHgpMR0ON50U10Bh+vZdpJU7VY4z+Z2y77fJHkoDc69scwwzLuW5MzeUKTwPo3ZMaB29imm6YulqnWfTkgzqRaion+EuD7FN9wZ4aXE1+mRt0gHsU193y+yxtRgpmY7SDMU9hCKoQtYyHsfFR5FUAOAKMdw2fzQqpToei3rnaYvZuYaxolprm9+/+WIETnPUDlxCYOiw7vPeaaYQQH0BF0TxyU3zu36ODx980rJvPAgtJzH1gUrlxcSS1HQeQ9ZaVM1eOK/jl8KJm6ijOwErHGbgf/hVymUQG65rHU2MWz9U8QUjvDWA==';
+  const orderGroupId = '';
+  const autoCapture = true;
+  const lang = 'en';
+
+  // Tạo raw signature trước khi kí HMAC SHA 256
+  var rawSignature = "accessKey=" + accessKey + "&amount=" + amount + "&extraData=" + extraData + "&ipnUrl=" + ipnUrl + "&orderId=" + orderId + "&orderInfo=" + orderInfo + "&partnerCode=" + partnerCode + "&redirectUrl=" + redirectUrl + "&requestId=" + requestId + "&requestType=" + requestType;
+
+  // Ký HMAC
+  const crypto = require('crypto');
+  var signature = crypto.createHmac('sha256', secretKey)
+    .update(rawSignature)
+    .digest('hex');
+
+  // Tạo request body gửi về cho Momo endpoint
+  const requestBody = {
+    partnerCode: partnerCode,
+    partnerName: "Test",
+    storeId: "MomoTestStore",
+    requestId: requestId,
+    amount: amount,
+    orderId: orderId,
+    orderInfo: orderInfo,
+    redirectUrl: redirectUrl,
+    ipnUrl: ipnUrl,
+    lang: lang,
+    requestType: requestType,
+    autoCapture: autoCapture,
+    extraData: extraData,
+    orderGroupId: orderGroupId,
+    signature: signature
+  };
+
+  // Sử dụng axios
+  const axios = require('axios');
+  try {
+    const result = await axios.post(endpoint, requestBody, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return res.status(200).json(result.data);
+  } catch (e) {
+    console.log("Error:", e.response ? e.response.data : e.message);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+});
+
+router.post("/momo-callback", async (req, res) => {
+  // Giải mã extraData
+  const extraData = req.body.extraData ? Buffer.from(req.body.extraData, 'base64').toString('utf-8') : null;
+  const parsedExtraData = extraData ? JSON.parse(extraData) : null;
+
+  if (!parsedExtraData || !parsedExtraData.email) {
+    return res.status(400).json({ success: false, message: 'Invalid request body' });
+  }
+  try {
+    const result = await upgradeUserVip(parsedExtraData.email);
+    if (result.success === false) {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+    res.json({ success: true, message: "User upgraded to VIP role" });
+  } catch (e) {
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
 module.exports = router;
