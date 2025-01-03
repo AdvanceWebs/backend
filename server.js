@@ -13,7 +13,7 @@ connectDB();
 
 // Middleware
 app.use(express.json());
-app.use(cors({ origin: "https://power-ai-theta.vercel.app" }));
+app.use(cors({ origin: "*" }));
 // app.use(express.urlencoded({ extended: true }));
 
 // Configure session middleware
