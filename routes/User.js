@@ -102,7 +102,7 @@ router.put("/profile", handleAccessToken, async (req, res) => {
     const userProfile = await updateProfile(req.user.email, newInfoUser);
     res.status(201).json({
       message: "Update user successfully",
-      success: true, 
+      success: true,
       data: userProfile,
     });
   } catch (error) {
@@ -492,7 +492,7 @@ router.post("/create-payment", handleAccessToken, async (req, res) => {
   const orderInfo = `Upgrade account`;
   const redirectUrl = "https://power-ai-theta.vercel.app";
   const ipnUrl = `https://4be0-2405-4802-8116-2430-a993-acae-e6b0-68ee.ngrok-free.app/user/momo-callback`;
-  const extraData = Buffer.from(JSON.stringify({ email: req.body.email })).toString('base64');;
+  const extraData = Buffer.from(JSON.stringify({ email: req.body.email })).toString('base64');
   const paymentCode = 'T8Qii53fAXyUftPV3m9ysyRhEanUs9KlOPfHgpMR0ON50U10Bh+vZdpJU7VY4z+Z2y77fJHkoDc69scwwzLuW5MzeUKTwPo3ZMaB29imm6YulqnWfTkgzqRaion+EuD7FN9wZ4aXE1+mRt0gHsU193y+yxtRgpmY7SDMU9hCKoQtYyHsfFR5FUAOAKMdw2fzQqpToei3rnaYvZuYaxolprm9+/+WIETnPUDlxCYOiw7vPeaaYQQH0BF0TxyU3zu36ODx980rJvPAgtJzH1gUrlxcSS1HQeQ9ZaVM1eOK/jl8KJm6ijOwErHGbgf/hVymUQG65rHU2MWz9U8QUjvDWA==';
   const orderGroupId = '';
   const autoCapture = true;
@@ -545,6 +545,47 @@ router.post("/create-payment", handleAccessToken, async (req, res) => {
 });
 
 router.post("/momo-callback", async (req, res) => {
+  console.log("MOMO Callback");
+  console.log(req.body);
+
+  let vnp_Params = req.body;
+
+  let secureHash = vnp_Params['signature'];
+
+  delete vnp_Params['signature'];
+
+  let querystring = require('qs');
+  const signData = querystring.stringify(vnp_Params, { encode: false });
+  console.log("sign data: ", signData);
+
+  const momoConfig = require("../config/momo");
+  const { secretKey } = momoConfig;
+
+  const crypto = require('crypto');
+  var signature = crypto.createHmac('sha256', secretKey)
+    .update(signData)
+    .digest('hex');
+
+  // let config = require('config');
+  // let tmnCode = config.get('vnp_TmnCode');
+  // let secretKey = config.get('vnp_HashSecret');
+
+  // let crypto = require("crypto");
+  // let hmac = crypto.createHmac("sha512", secretKey);
+  // let signed = hmac.update(new Buffer(signData, 'utf-8')).digest("hex");
+  // const orderId = req.query.vnp_TxnRef;
+
+  console.log("secure hash: ", secureHash);
+  console.log("signature: ", signature);
+  if (secureHash === signature) {
+    console.log("Thanh cong");
+    //Kiem tra xem du lieu trong db co hop le hay khong va thong bao ket qua
+    if (req.query.vnp_TransactionStatus == '00') orderService.updateOrderPaymentMethod(orderId, "VNPAY");
+    res.send("Thanh toán thành công");
+  } else {
+    res.send("Thanh toán thất bại");
+  }
+
   // Giải mã extraData
   const extraData = req.body.extraData ? Buffer.from(req.body.extraData, 'base64').toString('utf-8') : null;
   const parsedExtraData = extraData ? JSON.parse(extraData) : null;
