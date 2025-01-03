@@ -315,6 +315,12 @@ router.post("/forgot-password", async (req, res) => {
         .status(404)
         .json({ success: false, message: "User not found" });
     }
+    if (user.ssoProvider !== null) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Cannot reset password" });
+    }
+
     await sendLinkResetPassword(email);
     res.json({ success: true, message: "Reset link sent to email" });
   } catch (error) {
