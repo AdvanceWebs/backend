@@ -498,7 +498,7 @@ router.post("/create-payment", handleAccessToken, async (req, res) => {
   const orderId = `MOMO${new Date().getTime()}`;
   const requestId = `${new Date().getTime()}`;
   const orderInfo = `Upgrade-account`;
-  const redirectUrl = process.env.FRONTEND_SERVICE;
+  const redirectUrl = `${process.env.FRONTEND_SERVICE}/`;
   const ipnUrl = `${process.env.AUTH_SERVICE_DEPLOY}/user/momo-callback`;
   const extraData = Buffer.from(
     JSON.stringify({ email: req.user.email })
@@ -605,7 +605,7 @@ router.post("/momo-callback", async (req, res) => {
 
   console.log("secure hash: ", secureHash);
   console.log("signature: ", signature);
-  if (secureHash === signature) {
+  if (secureHash === signature && resultCode === 0) {
     console.log("Thanh cong");
     // Xử lý logic của bạn ở đây
 
