@@ -491,27 +491,52 @@ router.post("/upgrade-vip", checkAdmin, async (req, res) => {
 // Tạo link thanh toán momo
 router.post("/create-payment", handleAccessToken, async (req, res) => {
   const momoConfig = require("../config/momo");
-  const { partnerCode, accessKey, secretKey, requestType, endpoint } = momoConfig;
-  const amount = '50000';
+  const { partnerCode, accessKey, secretKey, requestType, endpoint } =
+    momoConfig;
+  const amount = "50000";
   const orderId = `MOMO${new Date().getTime()}`;
   const requestId = `${new Date().getTime()}`;
-  const orderInfo = `Upgrade account`;
+  const orderInfo = `Upgrade-account`;
   const redirectUrl = "https://power-ai-theta.vercel.app";
-  const ipnUrl = `https://4be0-2405-4802-8116-2430-a993-acae-e6b0-68ee.ngrok-free.app/user/momo-callback`;
-  const extraData = Buffer.from(JSON.stringify({ email: req.body.email })).toString('base64');
-  const paymentCode = 'T8Qii53fAXyUftPV3m9ysyRhEanUs9KlOPfHgpMR0ON50U10Bh+vZdpJU7VY4z+Z2y77fJHkoDc69scwwzLuW5MzeUKTwPo3ZMaB29imm6YulqnWfTkgzqRaion+EuD7FN9wZ4aXE1+mRt0gHsU193y+yxtRgpmY7SDMU9hCKoQtYyHsfFR5FUAOAKMdw2fzQqpToei3rnaYvZuYaxolprm9+/+WIETnPUDlxCYOiw7vPeaaYQQH0BF0TxyU3zu36ODx980rJvPAgtJzH1gUrlxcSS1HQeQ9ZaVM1eOK/jl8KJm6ijOwErHGbgf/hVymUQG65rHU2MWz9U8QUjvDWA==';
-  const orderGroupId = '';
+  const ipnUrl = `https://b436-2405-4800-5716-f530-c39-6290-40eb-10e4.ngrok-free.app/user/momo-callback`;
+  const extraData = Buffer.from(
+    JSON.stringify({ email: req.body.email })
+  ).toString("base64");
+  const paymentCode =
+    "T8Qii53fAXyUftPV3m9ysyRhEanUs9KlOPfHgpMR0ON50U10Bh+vZdpJU7VY4z+Z2y77fJHkoDc69scwwzLuW5MzeUKTwPo3ZMaB29imm6YulqnWfTkgzqRaion+EuD7FN9wZ4aXE1+mRt0gHsU193y+yxtRgpmY7SDMU9hCKoQtYyHsfFR5FUAOAKMdw2fzQqpToei3rnaYvZuYaxolprm9+/+WIETnPUDlxCYOiw7vPeaaYQQH0BF0TxyU3zu36ODx980rJvPAgtJzH1gUrlxcSS1HQeQ9ZaVM1eOK/jl8KJm6ijOwErHGbgf/hVymUQG65rHU2MWz9U8QUjvDWA==";
+  const orderGroupId = "";
   const autoCapture = true;
-  const lang = 'en';
+  const lang = "en";
 
   // Tạo raw signature trước khi kí HMAC SHA 256
-  var rawSignature = "accessKey=" + accessKey + "&amount=" + amount + "&extraData=" + extraData + "&ipnUrl=" + ipnUrl + "&orderId=" + orderId + "&orderInfo=" + orderInfo + "&partnerCode=" + partnerCode + "&redirectUrl=" + redirectUrl + "&requestId=" + requestId + "&requestType=" + requestType;
+  var rawSignature =
+    "accessKey=" +
+    accessKey +
+    "&amount=" +
+    amount +
+    "&extraData=" +
+    extraData +
+    "&ipnUrl=" +
+    ipnUrl +
+    "&orderId=" +
+    orderId +
+    "&orderInfo=" +
+    orderInfo +
+    "&partnerCode=" +
+    partnerCode +
+    "&redirectUrl=" +
+    redirectUrl +
+    "&requestId=" +
+    requestId +
+    "&requestType=" +
+    requestType;
 
   // Ký HMAC
-  const crypto = require('crypto');
-  var signature = crypto.createHmac('sha256', secretKey)
+  const crypto = require("crypto");
+  var signature = crypto
+    .createHmac("sha256", secretKey)
     .update(rawSignature)
-    .digest('hex');
+    .digest("hex");
 
   // Tạo request body gửi về cho Momo endpoint
   const requestBody = {
@@ -529,11 +554,11 @@ router.post("/create-payment", handleAccessToken, async (req, res) => {
     autoCapture: autoCapture,
     extraData: extraData,
     orderGroupId: orderGroupId,
-    signature: signature
+    signature: signature,
   };
 
   // Sử dụng axios
-  const axios = require('axios');
+  const axios = require("axios");
   try {
     const result = await axios.post(endpoint, requestBody, {
       headers: {
@@ -553,60 +578,63 @@ router.post("/create-payment", handleAccessToken, async (req, res) => {
 router.post("/momo-callback", async (req, res) => {
   console.log("MOMO Callback");
   console.log(req.body);
+  const momoConfig = require("../config/momo");
+  const { secretKey, accessKey } = momoConfig;
+  let MOMO_Params = req.body;
+  let callbackData = MOMO_Params;
 
-  let vnp_Params = req.body;
+  let secureHash = MOMO_Params["signature"];
 
-  let secureHash = vnp_Params['signature'];
+  delete MOMO_Params["signature"];
 
-  delete vnp_Params['signature'];
-
-  let querystring = require('qs');
-  const signData = querystring.stringify(vnp_Params, { encode: false });
+  let querystring = require("qs");
+  const signData = querystring.stringify(MOMO_Params, { encode: false });
   console.log("sign data: ", signData);
 
-  const momoConfig = require("../config/momo");
-  const { secretKey } = momoConfig;
+  // Tạo chuỗi `rawSignature` theo thứ tự quy định
+  const rawSignature = `accessKey=${accessKey}&amount=${callbackData.amount}&extraData=${callbackData.extraData}&message=${callbackData.message}&orderId=${callbackData.orderId}&orderInfo=${callbackData.orderInfo}&orderType=${callbackData.orderType}&partnerCode=${callbackData.partnerCode}&payType=${callbackData.payType}&requestId=${callbackData.requestId}&responseTime=${callbackData.responseTime}&resultCode=${callbackData.resultCode}&transId=${callbackData.transId}`;
 
-  const crypto = require('crypto');
-  var signature = crypto.createHmac('sha256', secretKey)
-    .update(signData)
-    .digest('hex');
+  console.log("raw signature: ", rawSignature);
 
-  // let config = require('config');
-  // let tmnCode = config.get('vnp_TmnCode');
-  // let secretKey = config.get('vnp_HashSecret');
-
-  // let crypto = require("crypto");
-  // let hmac = crypto.createHmac("sha512", secretKey);
-  // let signed = hmac.update(new Buffer(signData, 'utf-8')).digest("hex");
-  // const orderId = req.query.vnp_TxnRef;
+  const crypto = require("crypto");
+  var signature = crypto
+    .createHmac("sha256", secretKey)
+    .update(rawSignature)
+    .digest("hex");
 
   console.log("secure hash: ", secureHash);
   console.log("signature: ", signature);
   if (secureHash === signature) {
     console.log("Thanh cong");
-    //Kiem tra xem du lieu trong db co hop le hay khong va thong bao ket qua
-    if (req.query.vnp_TransactionStatus == '00') orderService.updateOrderPaymentMethod(orderId, "VNPAY");
-    res.send("Thanh toán thành công");
-  } else {
-    res.send("Thanh toán thất bại");
-  }
+    // Xử lý logic của bạn ở đây
 
-  // Giải mã extraData
-  const extraData = req.body.extraData ? Buffer.from(req.body.extraData, 'base64').toString('utf-8') : null;
-  const parsedExtraData = extraData ? JSON.parse(extraData) : null;
+    // Giải mã extraData
+    const extraData = req.body.extraData
+      ? Buffer.from(req.body.extraData, "base64").toString("utf-8")
+      : null;
+    const parsedExtraData = extraData ? JSON.parse(extraData) : null;
 
-  if (!parsedExtraData || !parsedExtraData.email) {
-    return res.status(400).json({ success: false, message: 'Invalid request body' });
-  }
-  try {
-    const result = await upgradeUserVip(parsedExtraData.email);
-    if (result.success === false) {
-      return res.status(400).json({ success: false, message: result.message });
+    if (!parsedExtraData || !parsedExtraData.email) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid request body" });
     }
-    res.json({ success: true, message: "User upgraded to VIP role" });
-  } catch (e) {
-    res.status(500).json({ success: false, message: "Internal server error" });
+    try {
+      const result = await upgradeUserVip(parsedExtraData.email);
+      if (result.success === false) {
+        return res
+          .status(400)
+          .json({ success: false, message: result.message });
+      }
+      res.json({ success: true, message: "User upgraded to VIP role" });
+    } catch (e) {
+      res
+        .status(500)
+        .json({ success: false, message: "Internal server error" });
+    }
+  } else {
+    console.log("That bai");
+    res.status(400).json({ success: false, message: "Invalid signature" });
   }
 });
 
