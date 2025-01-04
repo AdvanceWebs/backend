@@ -493,6 +493,7 @@ router.post("/create-payment", handleAccessToken, async (req, res) => {
   const momoConfig = require("../config/momo");
   const { partnerCode, accessKey, secretKey, requestType, endpoint } =
     momoConfig;
+  console.log(req.user.email);
   const amount = "50000";
   const orderId = `MOMO${new Date().getTime()}`;
   const requestId = `${new Date().getTime()}`;
@@ -500,7 +501,7 @@ router.post("/create-payment", handleAccessToken, async (req, res) => {
   const redirectUrl = process.env.FRONTEND_SERVICE;
   const ipnUrl = `${process.env.AUTH_SERVICE_DEPLOY}/user/momo-callback`;
   const extraData = Buffer.from(
-    JSON.stringify({ email: req.body.email })
+    JSON.stringify({ email: req.user.email })
   ).toString("base64");
   const paymentCode =
     "T8Qii53fAXyUftPV3m9ysyRhEanUs9KlOPfHgpMR0ON50U10Bh+vZdpJU7VY4z+Z2y77fJHkoDc69scwwzLuW5MzeUKTwPo3ZMaB29imm6YulqnWfTkgzqRaion+EuD7FN9wZ4aXE1+mRt0gHsU193y+yxtRgpmY7SDMU9hCKoQtYyHsfFR5FUAOAKMdw2fzQqpToei3rnaYvZuYaxolprm9+/+WIETnPUDlxCYOiw7vPeaaYQQH0BF0TxyU3zu36ODx980rJvPAgtJzH1gUrlxcSS1HQeQ9ZaVM1eOK/jl8KJm6ijOwErHGbgf/hVymUQG65rHU2MWz9U8QUjvDWA==";
