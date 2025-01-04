@@ -19,8 +19,5 @@ COPY .env .env
 # Expose the port the app runs on
 EXPOSE 5000
 
-# Define environment variables (if any)
-ENV NODE_ENV=production
-
 # Start the application
 CMD ["node", "server.js"]
