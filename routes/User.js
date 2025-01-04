@@ -498,7 +498,7 @@ router.post("/create-payment", handleAccessToken, async (req, res) => {
   const orderId = `MOMO${new Date().getTime()}`;
   const requestId = `${new Date().getTime()}`;
   const orderInfo = `Upgrade-account`;
-  const redirectUrl = `${process.env.FRONTEND_SERVICE}/`;
+  const redirectUrl = `${process.env.FRONTEND_SERVICE}/upgrade-account-result`;
   const ipnUrl = `${process.env.AUTH_SERVICE_DEPLOY}/user/momo-callback`;
   const extraData = Buffer.from(
     JSON.stringify({ email: req.user.email })
