@@ -298,7 +298,7 @@ async function loginUser(usernameOrEmail, password, bypassSsoProvider) {
       `${baseUrl}/realms/${realmName}/protocol/openid-connect/token`,
       new URLSearchParams({
         grant_type: "password",
-        username: username,
+        username: foundedUser.username,
         password: password,
         client_id: clientId,
         client_secret: clientSecret,
