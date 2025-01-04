@@ -497,8 +497,8 @@ router.post("/create-payment", handleAccessToken, async (req, res) => {
   const orderId = `MOMO${new Date().getTime()}`;
   const requestId = `${new Date().getTime()}`;
   const orderInfo = `Upgrade-account`;
-  const redirectUrl = "https://power-ai-theta.vercel.app";
-  const ipnUrl = `https://b436-2405-4800-5716-f530-c39-6290-40eb-10e4.ngrok-free.app/user/momo-callback`;
+  const redirectUrl = process.env.FRONTEND_SERVICE;
+  const ipnUrl = `${process.env.AUTH_SERVICE_DEPLOY}/user/momo-callback`;
   const extraData = Buffer.from(
     JSON.stringify({ email: req.body.email })
   ).toString("base64");
