@@ -3,6 +3,7 @@ const axios = require("axios");
 const https = require("https");
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
+const { Op } = require("sequelize");
 
 require("dotenv").config(); // Đọc biến môi trường từ tệp .env
 
@@ -266,13 +267,15 @@ async function getUser(username) {
 }
 
 // Hàm login user sử dụng axios
-async function loginUser(username, password, bypassSsoProvider) {
-  if (!username || !password) {
+async function loginUser(usernameOrEmail, password, bypassSsoProvider) {
+  if (!usernameOrEmail || !password) {
     throw new Error("Username and password are required.");
   }
 
   const foundedUser = await User.findOne({
-    where: { username: username },
+    where: {
+      [Op.or]: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
+    },
   });
   if (bypassSsoProvider === false) {
     if (!foundedUser || foundedUser.ssoProvider !== null) {
