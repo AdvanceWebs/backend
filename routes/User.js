@@ -234,8 +234,9 @@ router.get(
         } else {
           res.json({
             success: false,
-            message: "Username đã được một tài khoản khác đăng ký",
+            message: "Email đã được một tài khoản khác đăng ký",
           });
+          return;
         }
       } else {
         if (resultEmail.status === true) {
@@ -246,6 +247,7 @@ router.get(
               success: false,
               message: "Email đã được một tài khoản khác đăng ký",
             });
+            return;
           }
         }
       }
