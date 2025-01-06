@@ -145,6 +145,7 @@ router.get(
             success: false,
             message: "Email đã được một tài khoản khác đăng ký",
           });
+          return;
         }
       } else {
         entity.password = appSetting.settingValue;
