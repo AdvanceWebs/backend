@@ -605,7 +605,7 @@ router.post("/momo-callback", async (req, res) => {
 
   console.log("secure hash: ", secureHash);
   console.log("signature: ", signature);
-  if (secureHash === signature && resultCode === 0) {
+  if (secureHash === signature && callbackData.resultCode === 0) {
     console.log("Thanh cong");
     // Xử lý logic của bạn ở đây
 
