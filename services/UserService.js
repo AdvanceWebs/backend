@@ -155,7 +155,6 @@ const getProfileV2 = async (userEmail) => {
     where: {
       [Op.or]: [{ email: userEmail }, { username: userEmail }],
     },
-    attributes: ["id", "email", "username"], // Include username in the attributes
   });
   if (!user) {
     return {
@@ -171,6 +170,7 @@ const getProfileV2 = async (userEmail) => {
       id: user.id,
       username: user.username,
       email: user.email,
+      ssoProvider: user.ssoProvider,
     },
   };
 };
