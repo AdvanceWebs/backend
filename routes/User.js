@@ -196,6 +196,7 @@ router.get(
       );
       res.json({ success: true, data: token });
     } catch (error) {
+      console.error(error);
       res.json({ success: false, message: "Server error" });
     }
   }
