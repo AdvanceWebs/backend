@@ -281,7 +281,7 @@ async function loginUser(usernameOrEmail, password, bypassSsoProvider) {
     if (!foundedUser || foundedUser.ssoProvider !== null) {
       return {
         success: false,
-        message: "Invalid username or password.",
+        message: `Account has been registered with SSO ${foundedUser.ssoProvider}. Please login with SSO.`,
       };
     }
   }

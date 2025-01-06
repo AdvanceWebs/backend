@@ -59,20 +59,12 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Missing required information." });
     }
 
-    const token = await loginUserService(email, password, false);
-    res.json({ data: token });
+    const result = await loginUserService(email, password, false);
+    if (result.success === true) {
+      res.json({ data: result.token });
+    }
+    res.status(401).json({ success: result.success, message: result.message });
   } catch (error) {
-    console.error(error.message);
-    if (error.message === "Invalid username or password.") {
-      return res.status(401).json({ message: error.message });
-    }
-    if (error.message === "Account not verified.") {
-      return res.status(401).json({ message: error.message });
-    }
-    if (error.message === "Username and password are required.") {
-      return res.status(400).json({ message: error.message });
-    }
-
     res.status(500).json({ message: "Server error" });
   }
 });

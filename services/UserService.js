@@ -84,11 +84,7 @@ const registerUser = async (user) => {
 const loginUserService = async (email, password, bypassSsoProvider) => {
   // Gọi hàm login từ Keycloak
   const result = await loginUser(email, password, bypassSsoProvider);
-  if (!result.success) {
-    throw new Error(result.message);
-  }
-
-  return result.token;
+  return result;
 };
 
 // Hàm lấy thông tin người dùng (profile)
