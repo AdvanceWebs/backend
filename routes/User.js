@@ -181,12 +181,12 @@ router.get(
 
     // Login để lấy token
     try {
-      const token = await loginUserService(
+      const result = await loginUserService(
         foundedUser.username,
         appSetting.settingValue,
         true
       );
-      res.json({ success: true, data: token });
+      res.json({ success: true, data: result.token });
     } catch (error) {
       console.error(error);
       res.json({ success: false, message: "Server error" });
@@ -286,12 +286,12 @@ router.get(
 
     // Login để lấy token
     try {
-      const token = await loginUserService(
+      const result = await loginUserService(
         foundedUser.username,
         appSetting.settingValue,
         true
       );
-      res.json({ success: true, data: token });
+      res.json({ success: true, data: result.token });
     } catch (error) {
       res.json({ success: false, message: "Lỗi hệ thống!" });
     }
