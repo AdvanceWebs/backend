@@ -34,7 +34,9 @@ router.post("/register", validateUser, async (req, res) => {
   try {
     const savedUser = await registerUser(user);
     console.log("User created:", savedUser);
-    res.status(201).json({ message: "Check email to activate your account" });
+    return res
+      .status(201)
+      .json({ message: "Check email to activate your account" });
   } catch (error) {
     console.error(error.message);
     if (error.message === "Email already exists.") {
@@ -46,7 +48,7 @@ router.post("/register", validateUser, async (req, res) => {
     if (error.message === "Missing required user information.") {
       return res.status(400).json({ message: error.message });
     }
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -61,11 +63,13 @@ router.post("/login", async (req, res) => {
 
     const result = await loginUserService(email, password, false);
     if (result.success === true) {
-      res.json({ data: result.token });
+      return res.json({ data: result.token });
     }
-    res.status(401).json({ success: result.success, message: result.message });
+    return res
+      .status(401)
+      .json({ success: result.success, message: result.message });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -73,7 +77,7 @@ router.post("/login", async (req, res) => {
 router.get("/profile", handleAccessToken, async (req, res) => {
   try {
     const userProfile = await getProfile(req.user.email);
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Fetch user profile successfully",
       data: userProfile,
@@ -83,7 +87,7 @@ router.get("/profile", handleAccessToken, async (req, res) => {
     if (error.message === "User not found") {
       return res.status(404).json({ message: error.message, success: false });
     }
-    res.status(500).json({ message: "Server error", sucess: false });
+    return res.status(500).json({ message: "Server error", sucess: false });
   }
 });
 
@@ -92,7 +96,7 @@ router.put("/profile", handleAccessToken, async (req, res) => {
   try {
     const newInfoUser = req.body;
     const userProfile = await updateProfile(req.user.email, newInfoUser);
-    res.status(201).json({
+    return res.status(201).json({
       message: "Update user successfully",
       success: true,
       data: userProfile,
@@ -102,7 +106,7 @@ router.put("/profile", handleAccessToken, async (req, res) => {
     if (error.message === "User not found") {
       return res.status(404).json({ message: error.message, success: false });
     }
-    res.status(500).json({ message: "Server error", success: false });
+    return res.status(500).json({ message: "Server error", success: false });
   }
 });
 
@@ -141,11 +145,10 @@ router.get(
       if (result.status === true) {
         foundedUser = result.data;
         if (foundedUser.ssoProvider === null) {
-          res.json({
+          return res.json({
             success: false,
             message: "Email đã được một tài khoản khác đăng ký",
           });
-          return;
         }
       } else {
         entity.password = appSetting.settingValue;
@@ -176,7 +179,7 @@ router.get(
         // Xóa user trên keycloak
       }
       console.log("Lỗi trong quá trình xác thực Tokena :", error);
-      res.json({
+      return res.json({
         success: false,
         message: "Lỗi hệ thống!",
       });
@@ -189,10 +192,10 @@ router.get(
         appSetting.settingValue,
         true
       );
-      res.json({ success: true, data: result.token });
+      return res.json({ success: true, data: result.token });
     } catch (error) {
       console.error(error);
-      res.json({ success: false, message: "Server error" });
+      return res.json({ success: false, message: "Server error" });
     }
   }
 );
@@ -232,22 +235,20 @@ router.get(
         if (resultUsername.data.ssoProvider !== null) {
           result = resultUsername;
         } else {
-          res.json({
+          return res.json({
             success: false,
             message: "Email đã được một tài khoản khác đăng ký",
           });
-          return;
         }
       } else {
         if (resultEmail.status === true) {
           if (resultEmail.data.ssoProvider !== null) {
             result = resultEmail;
           } else {
-            res.json({
+            return res.json({
               success: false,
               message: "Email đã được một tài khoản khác đăng ký",
             });
-            return;
           }
         }
       }
@@ -283,7 +284,7 @@ router.get(
         // Xóa user trên keycloak
       }
       console.log("Lỗi trong quá trình xác thực Tokena :", error);
-      res.json({
+      return res.status(500).json({
         success: false,
         message: "Lỗi hệ thống!",
       });
@@ -296,9 +297,9 @@ router.get(
         appSetting.settingValue,
         true
       );
-      res.json({ success: true, data: result.token });
+      return res.json({ success: true, data: result.token });
     } catch (error) {
-      res.json({ success: false, message: "Lỗi hệ thống!" });
+      return res.json({ success: false, message: "Lỗi hệ thống!" });
     }
   }
 );
@@ -320,9 +321,11 @@ router.post("/forgot-password", async (req, res) => {
     }
 
     await sendLinkResetPassword(email);
-    res.json({ success: true, message: "Reset link sent to email" });
+    return res.json({ success: true, message: "Reset link sent to email" });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 });
 
@@ -339,9 +342,11 @@ router.post("/reset-password", async (req, res) => {
       }
       return res.status(400).json({ success: false, message: result.message });
     }
-    res.json({ success: true, message: "Password has been reset" });
+    return res.json({ success: true, message: "Password has been reset" });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 });
 
@@ -625,15 +630,17 @@ router.post("/momo-callback", async (req, res) => {
           .status(400)
           .json({ success: false, message: result.message });
       }
-      res.json({ success: true, message: "User upgraded to VIP role" });
+      return res.json({ success: true, message: "User upgraded to VIP role" });
     } catch (e) {
-      res
+      return res
         .status(500)
         .json({ success: false, message: "Internal server error" });
     }
   } else {
     console.log("That bai");
-    res.status(400).json({ success: false, message: "Invalid signature" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid signature" });
   }
 });
 
