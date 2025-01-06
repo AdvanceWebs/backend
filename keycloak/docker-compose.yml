@@ -1,0 +1,38 @@
+version: '3.7'
+
+services:
+  keycloak:
+    container_name: keycloak_deploy
+    image: quay.io/keycloak/keycloak:latest
+    command:
+      - "start-dev"
+      - "--https-certificate-file=/certificates/cert.pem" # Đường dẫn tệp chứng chỉ SSL
+      - "--https-certificate-key-file=/certificates/key.pem" # Đường dẫn tệp khóa riêng SSL
+      - "--hostname-strict=false" # Tắt kiểm tra hostname nghiêm ngặt
+      - "--proxy-headers=xforwarded" # Sử dụng nếu Keycloak chạy phía sau proxy TLS (như AWS ALB)
+
+    environment:
+      # Tài khoản quản trị Keycloak
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: 123456aA@
+
+      # Cấu hình kết nối PostgreSQL
+      KC_DB: postgres # Loại cơ sở dữ liệu (PostgreSQL)
+      KC_DB_USERNAME: todoapphcmus_owner # Tên người dùng PostgreSQL
+      KC_DB_PASSWORD: ruzd4GIy8mwo # Mật khẩu PostgreSQL
+      KC_DB_URL: jdbc:postgresql://ep-quiet-dew-a1wwj6m3.ap-southeast-1.aws.neon.tech/todoapphcmus?sslmode=require
+      KC_DB_SCHEMA: keycloak # Schema mặc định cho Keycloak
+
+      # Cấu hình hostname và HTTPS
+      KEYCLOAK_HOSTNAME: "13.215.177.9:8443" # Địa chỉ IP công cộng và cổng HTTPS
+      KEYCLOAK_HTTPS_PORT: 8443 # Cổng HTTPS cho Keycloak
+
+    ports:
+      - "8443:8443" # Mở cổng 8443 trên host để trỏ đến container Keycloak
+
+    volumes:
+      - keycloak_data:/opt/keycloak/data # Lưu trữ dữ liệu Keycloak
+      - ./certificates:/certificates # Mount thư mục chứa chứng chỉ SSL vào container
+
+volumes:
+  keycloak_data:

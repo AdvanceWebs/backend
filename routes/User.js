@@ -63,7 +63,7 @@ router.post("/login", async (req, res) => {
 
     const result = await loginUserService(email, password, false);
     if (result.success === true) {
-      return res.json({ data: result.token });
+      return res.status(200).json({ data: result.token });
     }
     return res
       .status(401)
@@ -192,10 +192,10 @@ router.get(
         appSetting.settingValue,
         true
       );
-      return res.json({ success: true, data: result.token });
+      return res.status(200).json({ success: true, data: result.token });
     } catch (error) {
       console.error(error);
-      return res.json({ success: false, message: "Server error" });
+      return res.status(500).json({ success: false, message: "Server error" });
     }
   }
 );
@@ -297,9 +297,9 @@ router.get(
         appSetting.settingValue,
         true
       );
-      return res.json({ success: true, data: result.token });
+      return res.status(200).json({ success: true, data: result.token });
     } catch (error) {
-      return res.json({ success: false, message: "Lỗi hệ thống!" });
+      return res.status(500).json({ success: false, message: "Lỗi hệ thống!" });
     }
   }
 );
