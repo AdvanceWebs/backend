@@ -136,6 +136,8 @@ router.get(
       };
 
       const result = await getProfileV2(entity.email);
+
+      console.log("Lấy thông tin user từ keycloak:", result);
       if (result.status === true) {
         foundedUser = result.data;
         if (foundedUser.ssoProvider === null) {
